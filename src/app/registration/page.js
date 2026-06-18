@@ -17,35 +17,38 @@ const RegistrationPage = () => {
     formState: { errors },
   } = useForm({
     defaultValues: {
+      username: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
       role: "user",
     },
   });
 
   const password = watch("password");
 
-  // Form submission handler
   const onSubmit = async (formData) => {
     setLoading(true);
     try {
-      const { data: authData, error } = await authClient.signUp.email({
+      const { data, error } = await authClient.signUp.email({
         email: formData.email,
         password: formData.password,
         name: formData.username,
-        callbackURL: "/",
+        // Role অবশ্যই additionalFields এ পাঠাতে হবে
         additionalFields: {
           role: formData.role,
         },
+        callbackURL: "/dashboard", // রেজিস্ট্রেশনের পর সরাসরি ড্যাশবোর্ডে রিডাইরেক্ট হবে
       });
 
       if (error) {
-        console.error("Error during registration:", error);
         alert(error.message || "Registration failed");
       } else {
-        console.log("Registration successful:", authData);
         alert("Registration successful!");
+        window.location.href = "/dashboard";
       }
-    } catch (error) {
-      console.error("An Unexpected error during registration:", error);
+    } catch (err) {
+      console.error("Registration error:", err);
     } finally {
       setLoading(false);
     }
@@ -54,60 +57,60 @@ const RegistrationPage = () => {
   const handleGoogleLogin = async () => {
     await authClient.signIn.social({
       provider: "google",
-      callbackURL: "/",
+      callbackURL: "/dashboard",
     });
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
-      <div className="bg-white p-8 rounded shadow-md w-full max-w-md">
-        <h2 className="text-2xl font-bold mb-6 text-center">
-          Register To Art Hub
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+      <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-100">
+        <h2 className="text-2xl font-bold mb-6 text-center text-slate-800">
+          Join Art Hub
         </h2>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* Username */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-semibold text-slate-700">
               Username
             </label>
             <input
               type="text"
               {...register("username", { required: "Username is required" })}
-              className={`mt-1 block w-full border ${errors.username ? "border-red-500" : "border-gray-300"} rounded-md shadow-sm p-2`}
+              className="mt-1 block w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none"
             />
           </div>
 
           {/* Email */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-semibold text-slate-700">
               Email
             </label>
             <input
               type="email"
               {...register("email", { required: "Email is required" })}
-              className={`mt-1 block w-full border ${errors.email ? "border-red-500" : "border-gray-300"} rounded-md shadow-sm p-2`}
+              className="mt-1 block w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none"
             />
           </div>
 
           {/* Password */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-semibold text-slate-700">
               Password
             </label>
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
                 {...register("password", {
-                  required: "Password is required",
+                  required: "Required",
                   minLength: 6,
                 })}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 pr-10"
+                className="mt-1 block w-full border border-slate-300 rounded-lg p-2.5 pr-10 focus:ring-2 focus:ring-indigo-500 outline-none"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-2 top-3 text-gray-500"
+                className="absolute right-3 top-3 text-slate-400"
               >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
@@ -116,23 +119,22 @@ const RegistrationPage = () => {
 
           {/* Confirm Password */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-semibold text-slate-700">
               Confirm Password
             </label>
             <div className="relative">
               <input
                 type={showConfirmPassword ? "text" : "password"}
                 {...register("confirmPassword", {
-                  required: "Please confirm your password",
                   validate: (value) =>
                     value === password || "Passwords do not match",
                 })}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 pr-10"
+                className="mt-1 block w-full border border-slate-300 rounded-lg p-2.5 pr-10 focus:ring-2 focus:ring-indigo-500 outline-none"
               />
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-2 top-3 text-gray-500"
+                className="absolute right-3 top-3 text-slate-400"
               >
                 {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
@@ -140,28 +142,28 @@ const RegistrationPage = () => {
           </div>
 
           {/* Role Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Select Role
+          <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+            <label className="block text-sm font-semibold text-slate-700 mb-2">
+              Register As:
             </label>
-            <div className="flex gap-4">
-              <label className="flex items-center">
+            <div className="flex gap-6">
+              <label className="flex items-center cursor-pointer">
                 <input
                   type="radio"
                   {...register("role")}
                   value="user"
-                  className="mr-2"
-                />{" "}
-                User
+                  className="w-4 h-4 text-indigo-600"
+                />
+                <span className="ml-2 text-sm text-slate-600">User</span>
               </label>
-              <label className="flex items-center">
+              <label className="flex items-center cursor-pointer">
                 <input
                   type="radio"
                   {...register("role")}
-                  value="buyer"
-                  className="mr-2"
-                />{" "}
-                Seller
+                  value="artist"
+                  className="w-4 h-4 text-indigo-600"
+                />
+                <span className="ml-2 text-sm text-slate-600">Artist</span>
               </label>
             </div>
           </div>
@@ -169,35 +171,34 @@ const RegistrationPage = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition"
+            className="w-full bg-indigo-600 text-white py-2.5 rounded-lg font-semibold hover:bg-indigo-700 transition duration-200 disabled:opacity-50"
           >
-            {loading ? "Registering..." : "Register"}
-          </button>
-
-          <div className="relative my-4">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-gray-300" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-2 text-gray-500">
-                Or continue with
-              </span>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={handleGoogleLogin}
-            className="w-full flex items-center justify-center gap-2 bg-white border border-gray-300 py-2 rounded-md hover:bg-gray-50 transition"
-          >
-            Sign up with Google
+            {loading ? "Processing..." : "Create Account"}
           </button>
         </form>
 
-        <p className="mt-4 text-center text-sm text-gray-600">
+        <div className="my-6 flex items-center">
+          <div className="flex-grow border-t border-slate-200"></div>
+          <span className="px-3 text-xs text-slate-400 uppercase">
+            Or continue with
+          </span>
+          <div className="flex-grow border-t border-slate-200"></div>
+        </div>
+
+        <button
+          onClick={handleGoogleLogin}
+          className="w-full border border-slate-300 py-2.5 rounded-lg font-medium text-slate-700 hover:bg-slate-50 transition"
+        >
+          Google
+        </button>
+
+        <p className="mt-6 text-center text-sm text-slate-600">
           Already have an account?{" "}
-          <Link href="/login" className="text-blue-600 hover:underline">
-            Login here
+          <Link
+            href="/login"
+            className="text-indigo-600 font-semibold hover:underline"
+          >
+            Login
           </Link>
         </p>
       </div>

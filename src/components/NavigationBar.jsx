@@ -11,6 +11,7 @@ import {
   X,
   ChevronDown,
 } from "lucide-react";
+import Image from "next/image";
 
 const NavigationBar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -30,6 +31,9 @@ const NavigationBar = () => {
 
   const isActive = (path) => pathname === path;
 
+  const role = session?.user?.role || "user";
+  const dashboardPath = `/dashboard/${role}`;
+
   return (
     <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -44,7 +48,9 @@ const NavigationBar = () => {
             <Link
               href="/"
               className={
-                isActive("/") ? "text-blue-600 font-bold" : "text-gray-600"
+                isActive("/")
+                  ? "text-blue-600 font-bold"
+                  : "text-gray-600 hover:text-blue-600"
               }
             >
               Home
@@ -54,7 +60,7 @@ const NavigationBar = () => {
               className={
                 isActive("/browse-artworks")
                   ? "text-blue-600 font-bold"
-                  : "text-gray-600"
+                  : "text-gray-600 hover:text-blue-600"
               }
             >
               Browse
@@ -64,21 +70,25 @@ const NavigationBar = () => {
               <div className="relative">
                 <button
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="flex items-center gap-2 border rounded-full px-3 py-1 hover:bg-gray-50"
+                  className="flex items-center gap-2 border rounded-full px-3 py-1 hover:bg-gray-50 transition"
                 >
-                  <img
+                  <Image
                     src={
                       session.user.image ||
                       `https://ui-avatars.com/api/?name=${session.user.name}`
                     }
-                    className="w-8 h-8 rounded-full"
+                    alt="User Profile"
+                    width={32}
+                    height={32}
+                    className="rounded-full"
                   />
                   <ChevronDown size={16} />
                 </button>
+                {/* Dropdown */}
                 {isDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white border rounded-xl shadow-xl py-2">
+                  <div className="absolute right-0 mt-2 w-48 bg-white border rounded-xl shadow-xl py-2 z-50">
                     <Link
-                      href="/dashboard"
+                      href={dashboardPath}
                       className="px-4 py-2 hover:bg-gray-50 flex items-center gap-2"
                     >
                       <LayoutDashboard size={16} /> Dashboard
@@ -100,12 +110,15 @@ const NavigationBar = () => {
               </div>
             ) : (
               <>
-                <Link href="/login" className="text-gray-600">
+                <Link
+                  href="/login"
+                  className="text-gray-600 hover:text-blue-600"
+                >
                   Login
                 </Link>
                 <Link
                   href="/registration"
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg"
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
                 >
                   Get Started
                 </Link>
@@ -114,27 +127,42 @@ const NavigationBar = () => {
           </div>
 
           {/* Mobile Menu Button */}
-          <button className="md:hidden" onClick={() => setIsOpen(!isOpen)}>
-            {isOpen ? <X /> : <Menu />}
+          <button className="md:hidden p-2" onClick={() => setIsOpen(!isOpen)}>
+            {isOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
       </div>
 
       {/* Mobile Menu */}
       {isOpen && (
-        <div className="md:hidden bg-white border-t p-4 space-y-4">
-          <Link href="/" className="block">
+        <div className="md:hidden bg-white border-b p-4 space-y-4">
+          <Link
+            href="/"
+            className="block py-2"
+            onClick={() => setIsOpen(false)}
+          >
             Home
           </Link>
-          <Link href="/browse-artworks" className="block">
+          <Link
+            href="/browse-artworks"
+            className="block py-2"
+            onClick={() => setIsOpen(false)}
+          >
             Browse
           </Link>
           {session ? (
             <>
-              <Link href="/dashboard" className="block">
+              <Link
+                href={dashboardPath}
+                className="block py-2 font-semibold text-blue-600"
+                onClick={() => setIsOpen(false)}
+              >
                 Dashboard
               </Link>
-              <button onClick={handleLogout} className="text-red-600 block">
+              <button
+                onClick={handleLogout}
+                className="text-red-600 block py-2 w-full text-left"
+              >
                 Logout
               </button>
             </>
@@ -142,6 +170,7 @@ const NavigationBar = () => {
             <Link
               href="/login"
               className="block bg-blue-600 text-white text-center py-2 rounded"
+              onClick={() => setIsOpen(false)}
             >
               Login
             </Link>
