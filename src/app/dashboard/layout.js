@@ -1,4 +1,3 @@
-"use client";
 import DashboardSideBar from "../../components/dashboard/DashboardSideBar";
 
 const DashboardLayout = ({ children }) => {
