@@ -19,7 +19,7 @@ export default function ArtworkForm({ onSuccess, initialData }) {
     handleSubmit,
     control,
     reset,
-    formState: { isSubmitting },
+    formState: { isSubmitting, errors },
   } = useForm({
     defaultValues: initialData || {},
   });
@@ -30,9 +30,9 @@ export default function ArtworkForm({ onSuccess, initialData }) {
   }, [initialData, reset]);
 
   const onSubmit = async (data) => {
-    let imageUrl = data.imageUrl;
+    let imageUrl = data.imageUrl || "";
 
-    // যদি নতুন ইমেজ আপলোড করা হয়
+    // যদি নতুন ইমেজ আপলোড করা হয়
     if (data.image && data.image.length > 0) {
       const formData = new FormData();
       formData.append("image", data.image[0]);
@@ -53,28 +53,74 @@ export default function ArtworkForm({ onSuccess, initialData }) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div className="space-y-2">
+      {/* Title */}
+      <div className="space-y-1">
         <Label>Title</Label>
-        <Input {...register("title", { required: true })} />
+        <Input
+          {...register("title", { required: "Title is required" })}
+          className={
+            errors.title
+              ? "border-destructive focus-visible:ring-destructive"
+              : ""
+          }
+        />
+        {errors.title && (
+          <p className="text-xs text-destructive">{errors.title.message}</p>
+        )}
       </div>
-      <div className="space-y-2">
+
+      {/* Description */}
+      <div className="space-y-1">
         <Label>Description</Label>
-        <Textarea {...register("description", { required: true })} />
+        <Textarea
+          {...register("description", { required: "Description is required" })}
+          className={
+            errors.description
+              ? "border-destructive focus-visible:ring-destructive"
+              : ""
+          }
+        />
+        {errors.description && (
+          <p className="text-xs text-destructive">
+            {errors.description.message}
+          </p>
+        )}
       </div>
+
       <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
+        {/* Price */}
+        <div className="space-y-1">
           <Label>Price ($)</Label>
-          <Input type="number" {...register("price", { required: true })} />
+          <Input
+            type="number"
+            {...register("price", { required: "Price is required" })}
+            className={
+              errors.price
+                ? "border-destructive focus-visible:ring-destructive"
+                : ""
+            }
+          />
+          {errors.price && (
+            <p className="text-xs text-destructive">{errors.price.message}</p>
+          )}
         </div>
-        <div className="space-y-2">
+
+        {/* Category */}
+        <div className="space-y-1">
           <Label>Category</Label>
           <Controller
             name="category"
             control={control}
-            rules={{ required: true }}
+            rules={{ required: "Category is required" }}
             render={({ field }) => (
               <Select onValueChange={field.onChange} value={field.value}>
-                <SelectTrigger>
+                <SelectTrigger
+                  className={
+                    errors.category
+                      ? "border-destructive focus-visible:ring-destructive"
+                      : ""
+                  }
+                >
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
                 <SelectContent>
@@ -85,12 +131,20 @@ export default function ArtworkForm({ onSuccess, initialData }) {
               </Select>
             )}
           />
+          {errors.category && (
+            <p className="text-xs text-destructive">
+              {errors.category.message}
+            </p>
+          )}
         </div>
       </div>
-      <div className="space-y-2">
+
+      {/* Upload Image */}
+      <div className="space-y-1">
         <Label>Upload Image</Label>
         <Input type="file" {...register("image")} />
       </div>
+
       <Button type="submit" className="w-full" disabled={isSubmitting}>
         {isSubmitting ? "Saving..." : "Save Artwork"}
       </Button>

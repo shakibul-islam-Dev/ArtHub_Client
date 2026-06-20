@@ -1,13 +1,5 @@
 "use client";
-import {
-  Bars,
-  Bell,
-  Envelope,
-  Gear,
-  House,
-  Magnifier,
-  Person,
-} from "@gravity-ui/icons";
+import { Bars, Bell, Envelope, House, Magnifier } from "@gravity-ui/icons";
 import {
   Button,
   Drawer,
@@ -20,26 +12,30 @@ import {
   DrawerBody,
 } from "@heroui/react";
 import Link from "next/link";
+import { useSession } from "@/lib/auth-client";
 
 export default function DashboardSideBar() {
+  const { data: session } = useSession();
+  const role = session?.user?.role;
   const navItems = [
-    { icon: House, label: "Home", href: "/dashboard/artist" },
+    { icon: House, label: "Home", href: `/dashboard/${role}` },
     {
       icon: Magnifier,
       label: "Manage Artworks",
-      href: "/dashboard/artist/manage-artworks",
+      href: `/dashboard/${role}/manage-artworks`,
     },
     {
       icon: Bell,
       label: "Sales History",
-      href: "/dashboard/artist/sales-history",
+      href: `/dashboard/${role}/sales-history`,
     },
     {
       icon: Envelope,
-      label: "Profile Manager",
-      href: "/dashboard/artist/profile",
+      label: "Profile",
+      href: `/dashboard/${role}/profile`,
     },
   ];
+
   const navContents = (
     <nav className="flex flex-col gap-1">
       {navItems.map((item) => (
@@ -57,13 +53,13 @@ export default function DashboardSideBar() {
 
   return (
     <>
-      {/* ১. বড় স্ক্রিনের জন্য ফিক্সড সাইডবার (hidden on mobile, md:flex) */}
       <aside className="hidden md:flex flex-col w-64 shrink-0 border-r border-default p-4 lg:block">
-        <h2 className="text-xl font-bold p-2 mb-4">Dashboard</h2>
+        <h2 className="text-xl font-bold p-2 mb-4 capitalize">
+          {role} Dashboard
+        </h2>
         {navContents}
       </aside>
 
-      {/* ২. ছোট স্ক্রিনের জন্য ড্রয়ার বাটন (visible on mobile, md:hidden) */}
       <div className="md:hidden p-4">
         <Drawer>
           <Button variant="secondary" asChild>
@@ -74,7 +70,9 @@ export default function DashboardSideBar() {
               <DrawerDialog>
                 <DrawerCloseTrigger />
                 <DrawerHeader>
-                  <DrawerHeading>Dashboard</DrawerHeading>
+                  <DrawerHeading className="capitalize">
+                    {role} Dashboard
+                  </DrawerHeading>
                 </DrawerHeader>
                 <DrawerBody>{navContents}</DrawerBody>
               </DrawerDialog>

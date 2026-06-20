@@ -19,6 +19,7 @@ const NavigationBar = () => {
   const pathname = usePathname();
   const { data: session } = useSession();
 
+  // Handle Logout
   const handleLogout = async () => {
     await authClient.signOut({
       fetchOptions: {
@@ -29,10 +30,15 @@ const NavigationBar = () => {
     });
   };
 
-  const isActive = (path) => pathname === path;
+  // Guard clause
+  if (pathname.startsWith("/dashboard/")) {
+    return null;
+  }
 
-  const role = session?.user?.role || "user";
+  const role = session?.user?.role;
   const dashboardPath = `/dashboard/${role}`;
+
+  const isActive = (path) => pathname === path;
 
   return (
     <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
@@ -48,9 +54,7 @@ const NavigationBar = () => {
             <Link
               href="/"
               className={
-                isActive("/")
-                  ? "text-blue-600 font-bold"
-                  : "text-gray-600 hover:text-blue-600"
+                isActive("/") ? "text-blue-600 font-bold" : "text-gray-600"
               }
             >
               Home
@@ -60,7 +64,7 @@ const NavigationBar = () => {
               className={
                 isActive("/browse-artworks")
                   ? "text-blue-600 font-bold"
-                  : "text-gray-600 hover:text-blue-600"
+                  : "text-gray-600"
               }
             >
               Browse
@@ -77,27 +81,22 @@ const NavigationBar = () => {
                       session.user.image ||
                       `https://ui-avatars.com/api/?name=${session.user.name}`
                     }
-                    alt="User Profile"
+                    alt="User"
                     width={32}
                     height={32}
                     className="rounded-full"
                   />
                   <ChevronDown size={16} />
                 </button>
-                {/* Dropdown */}
+
                 {isDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white border rounded-xl shadow-xl py-2 z-50">
+                    {/* ডাইনামিক ড্যাশবোর্ড লিংক */}
                     <Link
                       href={dashboardPath}
                       className="px-4 py-2 hover:bg-gray-50 flex items-center gap-2"
                     >
                       <LayoutDashboard size={16} /> Dashboard
-                    </Link>
-                    <Link
-                      href="/settings"
-                      className="px-4 py-2 hover:bg-gray-50 flex items-center gap-2"
-                    >
-                      <Settings size={16} /> Settings
                     </Link>
                     <button
                       onClick={handleLogout}
@@ -110,73 +109,20 @@ const NavigationBar = () => {
               </div>
             ) : (
               <>
-                <Link
-                  href="/login"
-                  className="text-gray-600 hover:text-blue-600"
-                >
+                <Link href="/login" className="text-gray-600">
                   Login
                 </Link>
                 <Link
                   href="/registration"
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg"
                 >
                   Get Started
                 </Link>
               </>
             )}
           </div>
-
-          {/* Mobile Menu Button */}
-          <button className="md:hidden p-2" onClick={() => setIsOpen(!isOpen)}>
-            {isOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
         </div>
       </div>
-
-      {/* Mobile Menu */}
-      {isOpen && (
-        <div className="md:hidden bg-white border-b p-4 space-y-4">
-          <Link
-            href="/"
-            className="block py-2"
-            onClick={() => setIsOpen(false)}
-          >
-            Home
-          </Link>
-          <Link
-            href="/browse-artworks"
-            className="block py-2"
-            onClick={() => setIsOpen(false)}
-          >
-            Browse
-          </Link>
-          {session ? (
-            <>
-              <Link
-                href={dashboardPath}
-                className="block py-2 font-semibold text-blue-600"
-                onClick={() => setIsOpen(false)}
-              >
-                Dashboard
-              </Link>
-              <button
-                onClick={handleLogout}
-                className="text-red-600 block py-2 w-full text-left"
-              >
-                Logout
-              </button>
-            </>
-          ) : (
-            <Link
-              href="/login"
-              className="block bg-blue-600 text-white text-center py-2 rounded"
-              onClick={() => setIsOpen(false)}
-            >
-              Login
-            </Link>
-          )}
-        </div>
-      )}
     </nav>
   );
 };

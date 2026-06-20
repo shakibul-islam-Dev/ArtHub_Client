@@ -1,11 +1,16 @@
+"use client";
 import React from "react";
 import Link from "next/link";
-// সব আইকন react-icons থেকে এভাবে ইমপোর্ট করলে ঝামেলা কম হয়
 import { FaFacebookF, FaLinkedinIn } from "react-icons/fa";
-import { FaXTwitter } from "react-icons/fa6"; // X Twitter এর জন্য আলাদা ভার্সন
+import { FaXTwitter } from "react-icons/fa6";
 import { GrInstagram } from "react-icons/gr";
+import { usePathname } from "next/navigation";
 
 const Footer = () => {
+  const pathname = usePathname();
+  if (pathname === "/dashboard/artist") {
+    return null;
+  }
   return (
     <footer className="bg-gray-900 text-gray-300 py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

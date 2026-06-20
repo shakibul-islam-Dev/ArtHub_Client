@@ -22,6 +22,7 @@ const RegistrationPage = () => {
       password: "",
       confirmPassword: "",
       role: "user",
+      plan: "free",
     },
   });
 
@@ -34,18 +35,18 @@ const RegistrationPage = () => {
         email: formData.email,
         password: formData.password,
         name: formData.username,
-        // Role অবশ্যই additionalFields এ পাঠাতে হবে
         additionalFields: {
           role: formData.role,
+          plan: formData.plan,
         },
-        callbackURL: "/dashboard", // রেজিস্ট্রেশনের পর সরাসরি ড্যাশবোর্ডে রিডাইরেক্ট হবে
+        callbackURL: "/",
       });
 
       if (error) {
         alert(error.message || "Registration failed");
       } else {
         alert("Registration successful!");
-        window.location.href = "/dashboard";
+        window.location.href = "/";
       }
     } catch (err) {
       console.error("Registration error:", err);
@@ -57,7 +58,7 @@ const RegistrationPage = () => {
   const handleGoogleLogin = async () => {
     await authClient.signIn.social({
       provider: "google",
-      callbackURL: "/dashboard",
+      callbackURL: "/",
     });
   };
 
@@ -69,7 +70,6 @@ const RegistrationPage = () => {
         </h2>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {/* Username */}
           <div>
             <label className="block text-sm font-semibold text-slate-700">
               Username
@@ -81,7 +81,6 @@ const RegistrationPage = () => {
             />
           </div>
 
-          {/* Email */}
           <div>
             <label className="block text-sm font-semibold text-slate-700">
               Email
@@ -93,7 +92,6 @@ const RegistrationPage = () => {
             />
           </div>
 
-          {/* Password */}
           <div>
             <label className="block text-sm font-semibold text-slate-700">
               Password
@@ -117,7 +115,6 @@ const RegistrationPage = () => {
             </div>
           </div>
 
-          {/* Confirm Password */}
           <div>
             <label className="block text-sm font-semibold text-slate-700">
               Confirm Password
@@ -141,7 +138,6 @@ const RegistrationPage = () => {
             </div>
           </div>
 
-          {/* Role Selection */}
           <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
             <label className="block text-sm font-semibold text-slate-700 mb-2">
               Register As:
@@ -164,6 +160,47 @@ const RegistrationPage = () => {
                   className="w-4 h-4 text-indigo-600"
                 />
                 <span className="ml-2 text-sm text-slate-600">Artist</span>
+              </label>
+            </div>
+          </div>
+
+          <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+            <label className="block text-sm font-semibold text-slate-700 mb-2">
+              Select Plan:
+            </label>
+            <div className="flex justify-between gap-2">
+              <label className="flex items-center cursor-pointer flex-1 bg-white p-2 rounded border border-slate-200 hover:bg-slate-100 transition">
+                <input
+                  type="radio"
+                  {...register("plan")}
+                  value="free"
+                  className="w-4 h-4 text-indigo-600"
+                />
+                <span className="ml-2 text-xs font-medium text-slate-600">
+                  Free
+                </span>
+              </label>
+              <label className="flex items-center cursor-pointer flex-1 bg-white p-2 rounded border border-slate-200 hover:bg-slate-100 transition">
+                <input
+                  type="radio"
+                  {...register("plan")}
+                  value="pro"
+                  className="w-4 h-4 text-indigo-600"
+                />
+                <span className="ml-2 text-xs font-medium text-slate-600">
+                  Pro
+                </span>
+              </label>
+              <label className="flex items-center cursor-pointer flex-1 bg-white p-2 rounded border border-slate-200 hover:bg-slate-100 transition">
+                <input
+                  type="radio"
+                  {...register("plan")}
+                  value="plus"
+                  className="w-4 h-4 text-indigo-600"
+                />
+                <span className="ml-2 text-xs font-medium text-slate-600">
+                  Plus
+                </span>
               </label>
             </div>
           </div>
