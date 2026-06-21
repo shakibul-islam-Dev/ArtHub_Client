@@ -7,8 +7,6 @@ export async function proxy(request) {
     headers: request.headers,
   });
 
-  console.log("Proxy Session Check:", session);
-
   const role = session?.user?.role;
   const plan = session?.user?.plan;
 

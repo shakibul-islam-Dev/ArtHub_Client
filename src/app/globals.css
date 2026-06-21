@@ -1,6 +1,6 @@
 @import "tailwindcss";
 @import "@heroui/styles";
-@theme {
+/* @theme {
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
   --color-card: hsl(var(--card));
@@ -75,4 +75,4 @@
   body {
     @apply bg-background text-foreground;
   }
-}
+} */
