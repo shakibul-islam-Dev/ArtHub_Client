@@ -2,7 +2,7 @@ import DashboardSideBar from "../../components/dashboard/DashboardSideBar";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 
-const DashboardLayout = async ({ children }) => {
+const DashboardParentLayout = async ({ children }) => {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -18,4 +18,4 @@ const DashboardLayout = async ({ children }) => {
   );
 };
 
-export default DashboardLayout;
+export default DashboardParentLayout;

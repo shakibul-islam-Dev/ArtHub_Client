@@ -12,6 +12,7 @@ export async function POST() {
     const userSession = await auth.api.getSession({
       headers: await headers(),
     });
+    console.log(userSession);
     const PRICE_ID = "price_1TkODgHE1aRpzyeZS4b8idsi";
 
     // Create Checkout Sessions from body params.
