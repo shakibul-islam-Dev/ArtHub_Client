@@ -1,4 +1,5 @@
-import DashboardSideBar from "../../components/dashboard/DashboardSideBar";
+import DashboardNavBar from "@/components/dashboard/DashboardNavBar";
+import DashboardSideBar from "@/components/dashboard/DashboardSideBar";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 
@@ -8,11 +9,18 @@ const DashboardParentLayout = async ({ children }) => {
   });
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-slate-50">
+    <div className="flex h-screen bg-slate-50 overflow-hidden">
+      {/* Sidebar - এটি স্থির থাকবে */}
       <DashboardSideBar session={session} />
 
-      <main className="flex-1 p-4 md:p-8 overflow-y-auto">
-        <div className="max-w-7xl mx-auto">{children}</div>
+      {/* Main Content Area */}
+      <main className="flex-1 flex flex-col h-full overflow-hidden">
+        {/* Navbar */}
+
+        {/* Scrollable Page Content */}
+        <div className="flex-1 overflow-y-auto p-4 md:p-8">
+          <div className="max-w-7xl mx-auto">{children}</div>
+        </div>
       </main>
     </div>
   );
