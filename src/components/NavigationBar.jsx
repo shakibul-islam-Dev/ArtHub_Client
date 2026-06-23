@@ -1,10 +1,27 @@
 "use client";
+
 import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useTheme } from "next-themes";
 import { useSession, authClient } from "@/lib/auth-client";
-import { LogOut, LayoutDashboard, Settings, Menu, X } from "lucide-react";
+import {
+  Moon,
+  Sun,
+  LogOut,
+  LayoutDashboard,
+  Settings,
+  Menu,
+  X,
+} from "lucide-react";
 import { Avatar, Dropdown, Label } from "@heroui/react";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const NavigationBar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -12,7 +29,7 @@ const NavigationBar = () => {
   const router = useRouter();
   const { data: session } = useSession();
 
-  // Guard clause
+  // Guard clause: ড্যাশবোর্ড পেজগুলোতে নেভিগেশন বার হাইড থাকবে
   if (pathname.startsWith("/dashboard/")) {
     return null;
   }
@@ -34,7 +51,7 @@ const NavigationBar = () => {
   const settingsPath = `/settings`;
   const isActive = (path) => pathname === path;
 
-  // ইউজার নামের প্রথম অক্ষর
+  // ইউজার প্রোফাইল ডাটা
   const userInitial = session?.user?.name
     ? session.user.name.trim().charAt(0).toUpperCase()
     : "U";
@@ -42,13 +59,13 @@ const NavigationBar = () => {
   const userEmail = session?.user?.email || "user@example.com";
 
   return (
-    <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
+    <nav className="bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
           {/* Logo */}
           <Link
             href="/"
-            className="font-bold text-2xl text-blue-600 flex items-center"
+            className="font-bold text-2xl text-blue-600 flex items-center tracking-tight"
           >
             Art Hub
           </Link>
@@ -60,7 +77,7 @@ const NavigationBar = () => {
               className={
                 isActive("/")
                   ? "text-blue-600 font-bold"
-                  : "text-gray-600 hover:text-blue-600 transition"
+                  : "text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-500 transition"
               }
             >
               Home
@@ -70,11 +87,14 @@ const NavigationBar = () => {
               className={
                 isActive("/browse-artworks")
                   ? "text-blue-600 font-bold"
-                  : "text-gray-600 hover:text-blue-600 transition"
+                  : "text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-500 transition"
               }
             >
               Browse
             </Link>
+
+            {/* Dark Mode Toggle */}
+            <ModeToggle />
 
             {session ? (
               <Dropdown>
@@ -85,7 +105,7 @@ const NavigationBar = () => {
                 </Dropdown.Trigger>
 
                 <Dropdown.Popover>
-                  <div className="px-3 pt-3 pb-2 border-b border-gray-100">
+                  <div className="px-3 pt-3 pb-2 border-b border-gray-100 dark:border-gray-800">
                     <div className="flex items-center gap-3">
                       <Avatar
                         size="sm"
@@ -94,10 +114,10 @@ const NavigationBar = () => {
                         <Avatar.Fallback>{userInitial}</Avatar.Fallback>
                       </Avatar>
                       <div className="flex flex-col gap-0">
-                        <p className="text-sm leading-5 font-semibold text-gray-800">
+                        <p className="text-sm leading-5 font-semibold text-gray-800 dark:text-gray-200">
                           {userName}
                         </p>
-                        <p className="text-xs leading-none text-gray-500">
+                        <p className="text-xs leading-none text-gray-500 dark:text-gray-400">
                           {userEmail}
                         </p>
                       </div>
@@ -117,7 +137,7 @@ const NavigationBar = () => {
                       </div>
                     </Dropdown.Item>
 
-                    {/* সেটিংস (নতুন যুক্ত করা হয়েছে) */}
+                    {/* সেটিংস */}
                     <Dropdown.Item
                       id="settings"
                       textValue="Settings"
@@ -147,28 +167,29 @@ const NavigationBar = () => {
                 </Dropdown.Popover>
               </Dropdown>
             ) : (
-              <>
+              <div className="flex items-center space-x-3">
                 <Link
                   href="/login"
-                  className="text-gray-600 hover:text-blue-600 transition"
+                  className="text-gray-600 dark:text-gray-300 hover:text-blue-600 transition font-medium"
                 >
                   Login
                 </Link>
                 <Link
                   href="/registration"
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-medium"
                 >
                   Get Started
                 </Link>
-              </>
+              </div>
             )}
           </div>
 
           {/* ================= MOBILE HAMBURGER BUTTON ================= */}
-          <div className="flex md:hidden items-center">
+          <div className="flex md:hidden items-center space-x-3">
+            <ModeToggle />
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="text-gray-600 hover:text-blue-600 focus:outline-none p-1"
+              className="text-gray-600 dark:text-gray-300 hover:text-blue-600 focus:outline-none p-1"
             >
               {isOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -178,23 +199,23 @@ const NavigationBar = () => {
 
       {/* ================= MOBILE DROPDOWN MENU ================= */}
       {isOpen && (
-        <div className="md:hidden bg-white border-b border-gray-200 px-4 pt-2 pb-4 space-y-3 shadow-lg absolute w-full left-0 z-40">
+        <div className="md:hidden bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800 px-4 pt-2 pb-4 space-y-3 shadow-lg absolute w-full left-0 z-40 transition-all">
           <Link
             href="/"
             onClick={() => setIsOpen(false)}
-            className={`block px-3 py-2 rounded-md font-medium ${isActive("/") ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-50"}`}
+            className={`block px-3 py-2 rounded-md font-medium ${isActive("/") ? "bg-blue-50 dark:bg-blue-950/50 text-blue-600" : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900"}`}
           >
             Home
           </Link>
           <Link
             href="/browse-artworks"
             onClick={() => setIsOpen(false)}
-            className={`block px-3 py-2 rounded-md font-medium ${isActive("/browse-artworks") ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-50"}`}
+            className={`block px-3 py-2 rounded-md font-medium ${isActive("/browse-artworks") ? "bg-blue-50 dark:bg-blue-950/50 text-blue-600" : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900"}`}
           >
             Browse
           </Link>
 
-          <hr className="border-gray-100 my-2" />
+          <hr className="border-gray-100 dark:border-gray-800 my-2" />
 
           {session ? (
             <div className="space-y-3 px-3">
@@ -203,10 +224,12 @@ const NavigationBar = () => {
                   {userInitial}
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-gray-800">
+                  <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">
                     {userName}
                   </p>
-                  <p className="text-xs text-gray-500">{userEmail}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {userEmail}
+                  </p>
                 </div>
               </div>
 
@@ -214,16 +237,16 @@ const NavigationBar = () => {
               <Link
                 href={dashboardPath}
                 onClick={() => setIsOpen(false)}
-                className="flex items-center gap-2 text-gray-600 hover:text-blue-600 py-2 transition text-sm font-medium"
+                className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 py-2 transition text-sm font-medium"
               >
                 <LayoutDashboard size={18} /> Dashboard
               </Link>
 
-              {/* মোবাইল সেটিংস লিংক (নতুন যুক্ত করা হয়েছে) */}
+              {/* মোবাইল সেটিংস লিংক */}
               <Link
                 href={settingsPath}
                 onClick={() => setIsOpen(false)}
-                className="flex items-center gap-2 text-gray-600 hover:text-blue-600 py-2 transition text-sm font-medium"
+                className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 py-2 transition text-sm font-medium"
               >
                 <Settings size={18} /> Settings
               </Link>
@@ -244,7 +267,7 @@ const NavigationBar = () => {
               <Link
                 href="/login"
                 onClick={() => setIsOpen(false)}
-                className="text-center text-gray-600 hover:text-blue-600 py-2 rounded-lg font-medium border border-gray-200"
+                className="text-center text-gray-600 dark:text-gray-300 hover:text-blue-600 py-2 rounded-lg font-medium border border-gray-200 dark:border-gray-800"
               >
                 Login
               </Link>
@@ -264,3 +287,34 @@ const NavigationBar = () => {
 };
 
 export default NavigationBar;
+
+export function ModeToggle() {
+  const { setTheme } = useTheme();
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="outline"
+          size="icon"
+          className="relative w-9 h-9 shrink-0 rounded-lg"
+        >
+          <Sun className="h-[1.2rem] w-[1.2rem] scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />
+          <Moon className="absolute h-[1.2rem] w-[1.2rem] scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0" />
+          <span className="sr-only">Toggle theme</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={() => setTheme("light")}>
+          Light
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setTheme("dark")}>
+          Dark
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setTheme("system")}>
+          System
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
