@@ -8,7 +8,7 @@ import {
   Menu,
   X,
   Home,
-  Image,
+  Image as ImageIcon, // Fixed duplicate import identifier collision
   History,
   CreditCard,
   User,
@@ -18,16 +18,16 @@ import {
   BarChart3,
   DollarSign,
   Users,
-  CheckSquare,
   LogOut,
 } from "lucide-react";
+import Image from "next/image";
 
 export default function DashboardSideBar({ session }) {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
-  // পাথ চেঞ্জ হলে মোবাইল মেনু বন্ধ হবে
+  // Close mobile drawer upon path changes
   useEffect(() => {
     setIsOpen(false);
   }, [pathname]);
@@ -35,11 +35,9 @@ export default function DashboardSideBar({ session }) {
   const rawRole = session?.user?.role || "user";
   const role = rawRole.toLowerCase();
 
-  // ইউজারের ইনফরমেশন (অবতারের জন্য)
   const userImage = session?.user?.image;
   const userName = session?.user?.name || "User";
 
-  // Better Auth লগআউট হ্যান্ডলার
   const handleLogout = async () => {
     try {
       await authClient.signOut({
@@ -61,7 +59,7 @@ export default function DashboardSideBar({ session }) {
       {
         label: "Bought Artworks",
         href: "/dashboard/user/bought-artworks",
-        icon: Image,
+        icon: ImageIcon,
       },
       {
         label: "Purchased History",
@@ -87,7 +85,11 @@ export default function DashboardSideBar({ session }) {
         href: "/dashboard/artist/add-artworks",
         icon: PlusCircle,
       },
-      { label: "Edit arts", href: "/dashboard/artist/artworks", icon: Image },
+      {
+        label: "Edit arts",
+        href: "/dashboard/artist/artworks",
+        icon: ImageIcon,
+      },
       {
         label: "Sales History",
         href: "/dashboard/artist/sales-history",
@@ -102,18 +104,13 @@ export default function DashboardSideBar({ session }) {
         href: "/dashboard/admin/analytics",
         icon: BarChart3,
       },
-      { label: "ArtWorks", href: "/dashboard/admin/artworks", icon: Image },
+      { label: "ArtWorks", href: "/dashboard/admin/artworks", icon: ImageIcon },
       {
         label: "Transactions",
         href: "/dashboard/admin/transactions",
         icon: DollarSign,
       },
       { label: "Users", href: "/dashboard/admin/users", icon: Users },
-      // {
-      //   label: "Approve Artworks",
-      //   href: "/dashboard/admin/approve-artworks",
-      //   icon: CheckSquare,
-      // },
     ],
   };
 
@@ -124,12 +121,14 @@ export default function DashboardSideBar({ session }) {
       {/* ================= DESKTOP SIDEBAR ================= */}
       <aside className="hidden md:flex flex-col w-64 shrink-0 border-r border-slate-200 p-4 h-screen sticky top-0 bg-white select-none justify-between">
         <div className="flex flex-col gap-4 overflow-y-auto no-scrollbar">
-          {/* ইউজার অবতার (সবার উপরে) */}
+          {/* User Profile Info Header */}
           <div className="flex items-center gap-3 p-2 border-b border-slate-100 pb-4">
             {userImage ? (
-              <img
+              <Image
                 src={userImage}
                 alt={userName}
+                width={40}
+                height={40}
                 className="w-10 h-10 rounded-full object-cover ring-2 ring-slate-100"
               />
             ) : (
@@ -147,7 +146,7 @@ export default function DashboardSideBar({ session }) {
             </div>
           </div>
 
-          {/* ডেক্সটপ নেভিগেশন লিংকসমূহ */}
+          {/* Desktop Links Navigation */}
           <nav className="flex flex-col gap-2">
             {serializableNavItems.map((item, index) => {
               const isActive = pathname === item.href;
@@ -173,7 +172,7 @@ export default function DashboardSideBar({ session }) {
           </nav>
         </div>
 
-        {/* লগআউট বাটন (একবারে নিচে) */}
+        {/* Bottom Desktop Logout Wrapper */}
         <div className="pt-4 border-t border-slate-100">
           <button
             onClick={handleLogout}
@@ -185,22 +184,25 @@ export default function DashboardSideBar({ session }) {
         </div>
       </aside>
 
-      {/* ================= MOBILE MENUBAR ================= */}
-      <div className="md:hidden w-full bg-white/90 backdrop-blur-md border-b border-slate-200 p-4 flex items-center justify-between sticky top-0 z-50">
-        <h2 className="text-lg font-bold capitalize text-slate-800">
+      {/* ================= MOBILE HEADER TOP BAR ================= */}
+      <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 flex items-center justify-between z-40">
+        <h2 className="text-md font-bold capitalize text-slate-800">
           {role} Dashboard
         </h2>
 
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="p-2 text-slate-600 hover:text-slate-900 focus:outline-none"
+          className="p-2 text-slate-600 hover:text-slate-900 focus:outline-none rounded-md hover:bg-slate-50"
           aria-label="Toggle Menu"
         >
-          {isOpen ? <X size={24} /> : <Menu size={24} />}
+          {isOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
       </div>
 
-      {/* ================= MOBILE DRAWER ================= */}
+      {/* Adding visual spacer context so top items don't hide under fixed header overlay */}
+      <div className="w-full h-16 md:hidden block shrink-0" />
+
+      {/* ================= MOBILE DRAWER BACKDROP OVERLAY ================= */}
       <div
         className={`fixed inset-0 bg-black/40 z-40 md:hidden transition-opacity duration-300 ${
           isOpen
@@ -210,20 +212,22 @@ export default function DashboardSideBar({ session }) {
         onClick={() => setIsOpen(false)}
       />
 
-      {/* স্লাইডিং মোবাইল মেনু */}
+      {/* ================= MOBILE SLIDING SIDEBAR DRAWER ================= */}
       <div
-        className={`fixed inset-y-0 right-0 w-64 bg-white z-50 p-6 shadow-xl flex flex-col md:hidden transition-transform duration-300 ease-in-out justify-between ${
-          isOpen ? "translate-x-0" : "translate-x-full"
+        className={`fixed inset-y-0 left-0 w-64 bg-white z-50 p-6 shadow-xl flex flex-col md:hidden transition-transform duration-300 ease-in-out justify-between ${
+          isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="flex flex-col gap-4 overflow-y-auto no-scrollbar">
           <div className="flex justify-between items-center pb-4 border-b border-slate-100">
-            {/* মোবাইল অবতার */}
+            {/* Mobile User Metadata   */}
             <div className="flex items-center gap-3">
               {userImage ? (
-                <img
+                <Image
                   src={userImage}
                   alt={userName}
+                  width={36}
+                  height={36}
                   className="w-9 h-9 rounded-full object-cover"
                 />
               ) : (
@@ -242,12 +246,13 @@ export default function DashboardSideBar({ session }) {
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="text-slate-500 p-1"
+              className="text-slate-500 p-1 hover:bg-slate-50 rounded-md"
             >
               <X size={20} />
             </button>
           </div>
 
+          {/* Mobile Drawer Menu Links */}
           <nav className="flex flex-col gap-2">
             {serializableNavItems.map((item, index) => {
               const isActive = pathname === item.href;
@@ -273,7 +278,7 @@ export default function DashboardSideBar({ session }) {
           </nav>
         </div>
 
-        {/* মোবাইল লগআউট বাটন (একবারে নিচে) */}
+        {/* Mobile App Bottom Logout Wrapper Area */}
         <div className="pt-4 border-t border-slate-100">
           <button
             onClick={handleLogout}

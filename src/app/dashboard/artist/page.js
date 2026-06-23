@@ -27,7 +27,7 @@ const ArtistDashboardPage = () => {
 
       {/* ================= TABLE LAYER WITH RESPONSIVE CONTAINER ================= */}
       <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
-        <Table variant="secondary" removeWrapper>
+        <Table variant="secondary">
           <Table.ScrollContainer>
             <Table.Content
               aria-label="Team members"

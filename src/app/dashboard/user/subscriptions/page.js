@@ -97,18 +97,20 @@ export default function SubscriptionCards({ activePlanName }) {
                   ))}
                 </ul>
               </div>
-
-              <button
-                className={`w-full py-3 rounded-xl font-bold transition-colors ${
-                  isCurrent
-                    ? "bg-slate-200 dark:bg-slate-700 cursor-default"
-                    : tier.popular
-                      ? "bg-violet-600 text-white hover:bg-violet-700"
-                      : "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
-                }`}
-              >
-                {isCurrent ? "Current Plan" : tier.buttonText}
-              </button>
+              <form action={`/api/subscription`} method="POST">
+                <button
+                  type="submit"
+                  className={`w-full py-3 rounded-xl font-bold transition-colors ${
+                    isCurrent
+                      ? "bg-slate-200 dark:bg-slate-700 cursor-default"
+                      : tier.popular
+                        ? "bg-violet-600 text-white hover:bg-violet-700"
+                        : "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
+                  }`}
+                >
+                  {isCurrent ? "Current Plan" : tier.buttonText}
+                </button>
+              </form>
             </div>
           );
         })}

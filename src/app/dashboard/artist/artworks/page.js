@@ -1,129 +1,178 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Image as ImageIcon, Trash2, FolderEdit } from "lucide-react";
+import {
+  Image as ImageIcon,
+  Trash2,
+  FolderEdit,
+  Loader2,
+  Plus,
+} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useSession } from "@/lib/auth-client";
+import { deleteArtPost } from "@/lib/actions/arthubdatabse";
 
 const ManageArtWorks = () => {
-  // আর্টওয়ার্ক ডেটা স্টেট (ভবিষ্যতে API বা Server Component থেকে পপুলেট করতে পারবেন)
   const [artworks, setArtworks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState(null);
+  const { data: session, isPending } = useSession();
 
-  // আর্টওয়ার্ক ডিলিট করার হ্যান্ডলার
-  const deleteArtwork = async (id) => {
+  // ব্যাকএন্ড API থেকে ডাটা ফেচ করা
+  useEffect(() => {
+    const fetchArtworks = async () => {
+      if (isPending || !session?.user) return;
+
+      try {
+        setLoading(true);
+        const res = await fetch("http://localhost:5000/api/artHub/artwork");
+        const allArtworks = await res.json();
+
+        // বর্তমান লগইন থাকা আর্টিস্টের নাম দিয়ে ডাটা ফিল্টার
+        const userSpecificArt = allArtworks.filter(
+          (art) => art.artist_name === session.user.name,
+        );
+
+        setArtworks(userSpecificArt);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchArtworks();
+  }, [session, isPending]);
+
+  // ২. আসল ডিলিট লজিক (Server Action এর মাধ্যমে)
+  const handleDelete = async (id) => {
+    const isConfirmed = window.confirm(
+      "আপনি কি নিশ্চিত যে এই আর্টওয়ার্কটি ডিলিট করতে চান?",
+    );
+
+    if (!isConfirmed) return;
+
     try {
-      // এখানে ডিলিট সার্ভার অ্যাকশন কল করতে পারেন: await deleteArtAction(id);
-      setArtworks(artworks.filter((art) => art.id !== id));
+      setDeletingId(id); // ডিলিট শুরু হলে ঐ নির্দিষ্ট আইডিতে লোডার দেখাবে
+      const response = await deleteArtPost(id);
+
+      if (response.success) {
+        alert(response.message);
+        // UI স্টেট থেকে ডিলিট হওয়া আইটেমটি ইনস্ট্যান্ট রিমুভ করা
+        setArtworks((prev) => prev.filter((art) => art._id !== id));
+      } else {
+        alert(response.message || "ডিলিট করতে সমস্যা হয়েছে!");
+      }
     } catch (error) {
-      console.error("Failed to delete artwork:", error);
+      console.error("Delete error:", error);
+      alert("সার্ভার কানেকশন ফেইল্ড!");
+    } finally {
+      setDeletingId(null);
     }
   };
 
+  // লোডিং স্টেট
+  if (isPending || loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[300px] gap-2">
+        <Loader2 className="animate-spin text-slate-500" size={28} />
+        <p className="text-sm text-slate-500">ডাটা লোড হচ্ছে...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8">
-      {/* ================= HEADER SECTION ================= */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-5">
+      {/* হেডার */}
+      <div className="flex justify-between items-center border-b border-slate-100 pb-5">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">
-            Manage Artworks
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            View, organize, and manage your uploaded art creations.
+          <h1 className="text-2xl font-bold text-slate-900">Manage Artworks</h1>
+          <p className="text-sm text-slate-500">
+            শিল্পী: {session?.user?.name}
           </p>
         </div>
-
-        {/* <Link href="/dashboard/artist/add-artworks" passHref>
-          <Button className="bg-slate-900 hover:bg-slate-800 text-white flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition-all">
-            <Plus size={16} /> Add Artwork
+        <Link href="/dashboard/artist/add-artworks">
+          <Button className="bg-slate-800 hover:bg-slate-900 text-white gap-2 text-sm">
+            <Plus size={16} /> নতুন আর্ট যোগ করুন
           </Button>
-        </Link> */}
+        </Link>
       </div>
 
-      {/* ================= GALLERY CONTAINER ================= */}
+      {/* আর্টওয়ার্ক লিস্ট/গ্রিড */}
       {artworks.length === 0 ? (
-        /* 1. Empty State (কোনো আর্টওয়ার্ক না থাকলে) */
-        <div className="flex flex-col items-center justify-center text-center py-20 px-4 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
-          <div className="p-4 bg-white rounded-full shadow-sm text-slate-400 mb-4 border border-slate-100">
-            <ImageIcon size={36} />
-          </div>
-          <h3 className="text-lg font-semibold text-slate-800">
-            No Artworks Found
-          </h3>
-          <p className="text-sm text-slate-500 max-w-xs mt-1">
-            Your gallery is empty. Start showcasing your masterpieces today!
+        <div className="text-center py-16 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50">
+          <ImageIcon size={36} className="mx-auto text-slate-400 mb-2" />
+          <p className="text-slate-600 font-medium">
+            আপনার যোগ করা কোনো আর্টওয়ার্ক পাওয়া যায়নি!
           </p>
-          <Link href="/dashboard/artist/add-artworks" className="mt-5" passHref>
-            <Button
-              variant="outline"
-              className="border-slate-200 hover:bg-slate-100 text-slate-700 font-medium text-sm"
-            >
-              Add your first artwork now
-            </Button>
-          </Link>
         </div>
       ) : (
-        /* 2. Artwork Grid Gallery (আর্টওয়ার্ক থাকলে) */
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {artworks.map((art) => (
             <Card
-              key={art.id}
-              className="group overflow-hidden border border-slate-200 bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-200 flex flex-col"
+              key={art._id}
+              className="overflow-hidden border border-slate-200 bg-white rounded-xl flex flex-col"
             >
-              {/* Image Preview Container */}
-              <div className="relative w-full aspect-[4/3] bg-slate-100 overflow-hidden">
+              {/* ছবি প্রিভিউ */}
+              <div className="relative w-full aspect-[4/3] bg-slate-100">
                 <Image
-                  src={art.imageUrl || "/placeholder.jpg"}
+                  src={art.image_url || "/placeholder.jpg"}
                   fill
-                  sizes="(max-w-7xl) 25vw"
-                  className="object-cover group-hover:scale-105 transition-transform duration-300"
-                  alt={art.title || "Artwork image"}
-                  priority={false}
+                  className="object-cover"
+                  alt={art.title || "Artwork"}
+                  unoptimized
                 />
               </div>
 
-              {/* Artwork Meta Details */}
+              {/* মেটা ডেটা ও বাটন */}
               <CardContent className="p-4 flex flex-col flex-1 justify-between gap-4">
-                <div className="space-y-1">
-                  <h3
-                    className="font-bold text-slate-800 text-base truncate"
-                    title={art.title}
-                  >
+                <div>
+                  <h3 className="font-bold text-slate-800 text-base truncate">
                     {art.title}
                   </h3>
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-medium capitalize">
+                  <div className="flex justify-between items-center text-xs mt-2">
+                    <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-medium capitalize">
                       {art.category}
                     </span>
                     <span className="font-semibold text-slate-900 text-sm">
-                      ${Number(art.price).toFixed(2)}
+                      ${art.price}
                     </span>
                   </div>
                 </div>
 
-                {/* Management Action Buttons */}
+                {/* অ্যাকশন বাটন সমূহ */}
                 <div className="grid grid-cols-2 gap-2 border-t border-slate-100 pt-3">
+                  {/* ৩. ইডিট বাটনকে ডাইনামিক পেইজে লিংকআপ করা হলো */}
                   <Link
-                    href={`/dashboard/artist/edit-artwork/${art.id}`}
-                    passHref
+                    href={`/dashboard/artist/edit-artworks/${art._id}`}
                     className="w-full"
                   >
                     <Button
                       variant="outline"
                       size="sm"
-                      className="w-full border-slate-200 text-slate-700 hover:bg-slate-50 flex items-center justify-center gap-1.5 h-9"
+                      className="w-full border-slate-200 text-slate-700 hover:bg-slate-50 gap-1.5 h-9"
                     >
                       <FolderEdit size={14} /> Edit
                     </Button>
                   </Link>
+
+                  {/* ৪. ডিলিট বাটন */}
                   <Button
                     variant="destructive"
                     size="sm"
-                    onClick={() => deleteArtwork(art.id)}
-                    className="bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 hover:border-red-200 flex items-center justify-center gap-1.5 h-9 shadow-none"
+                    disabled={deletingId === art._id} // ডিলিট চলাকালীন বাটন ডিজেবল থাকবে
+                    onClick={() => handleDelete(art._id)}
+                    className="bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 gap-1.5 h-9 shadow-none disabled:opacity-50"
                   >
-                    <Trash2 size={14} /> Delete
+                    {deletingId === art._id ? (
+                      <Loader2 className="animate-spin" size={14} />
+                    ) : (
+                      <Trash2 size={14} />
+                    )}
+                    {deletingId === art._id ? "Deleting..." : "Delete"}
                   </Button>
                 </div>
               </CardContent>

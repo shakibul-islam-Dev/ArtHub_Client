@@ -2,26 +2,37 @@
 
 import { useForm } from "react-hook-form";
 import { useState } from "react";
+import { createArtPost } from "@/lib/actions/arthubdatabse";
 import {
-  Image,
+  ImageIcon,
   DollarSign,
   Type,
   FileText,
   Layers,
   UploadCloud,
   Loader2,
+  X,
 } from "lucide-react";
+import Image from "next/image";
+import { useSession } from "@/lib/auth-client";
+import { toast } from "react-toastify";
+import { useRouter } from "next/navigation";
 
 export default function AddProductForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
+  const router = useRouter();
+
+  const { data: session } = useSession();
+
+  const IMGBB_API_KEY = process.env.NEXT_PUBLIC_IMAGE_UPLOAD_API_KEY;
 
   const {
     register,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
-    watch,
   } = useForm({
     defaultValues: {
       title: "",
@@ -32,9 +43,9 @@ export default function AddProductForm() {
     },
   });
 
-  // ইমেজ সিলেক্ট করলে প্রিভিউ দেখানোর জন্য হ্যান্ডলার
+  // ইমেজ চেঞ্জ হ্যান্ডেলার
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -44,29 +55,83 @@ export default function AddProductForm() {
     }
   };
 
+  // প্রিভিউ রিমুভ করার হ্যান্ডেলার
+  const handleRemovePreview = () => {
+    setImagePreview(null);
+    setValue("image", null);
+  };
+
   const onSubmit = async (data) => {
     setIsSubmitting(true);
+    let isSuccess = false;
+
     try {
-      // এখানে আপনার API কল বা FormData লজিক হ্যান্ডেল করবেন
-      console.log("Form Data Submitted:", data);
+      const file = data.image?.[0];
+      if (!file) {
+        toast.error("please upload an image!");
+        setIsSubmitting(false);
+        return;
+      }
 
-      // উদাহরণস্বরূপ: মাল্টিপার্ট ডেটা পাঠাতে চাইলে
-      // const formData = new FormData();
-      // formData.append("title", data.title);
-      // formData.append("image", data.image[0]);
+      if (!session?.user) {
+        toast.error("please login first!");
+        setIsSubmitting(false);
+        return;
+      }
 
-      alert("Successfully Submitted!");
-      reset();
-      setImagePreview(null);
+      const formData = new FormData();
+      formData.append("image", file);
+
+      const res = await fetch(
+        `https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`,
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
+
+      if (!res.ok) throw new Error("Image upload failed");
+
+      const imgData = await res.json();
+      const imageUrl = imgData.data.url;
+
+      const payload = {
+        title: data.title,
+        image_url: imageUrl,
+        artist_name: session.user.name,
+        artist_profile_url: session.user.image || "",
+        description: data.description,
+        price: parseFloat(data.price),
+        category: data.category,
+        date_uploaded: new Date().toISOString(),
+      };
+
+      const dbRes = await createArtPost(payload);
+
+      if (dbRes?.success) {
+        toast.success(dbRes.message || "Successfully Saved to Database!");
+        reset();
+        setImagePreview(null);
+        isSuccess = true;
+        setIsSubmitting(false);
+        if (isSuccess) {
+          setTimeout(() => {
+            router.push("/dashboard/artist/artworks");
+            router.refresh();
+          }, 500);
+        }
+      } else {
+        toast.error(dbRes?.message || "Database-e save korte somossa hoyeche!");
+      }
     } catch (error) {
-      console.error(error);
-    } finally {
-      setIsSubmitting(false);
+      console.error("Error submitting form:", error);
+      toast.error("Something went wrong! Please try again.");
     }
   };
 
   return (
     <div className="max-w-2xl mx-auto bg-white border border-slate-200 rounded-xl p-6 shadow-sm my-8">
+      {/* Header */}
       <div className="flex items-center gap-3 border-b border-slate-100 pb-4 mb-6">
         <div className="p-2 bg-slate-100 rounded-lg text-slate-800">
           <UploadCloud size={24} />
@@ -128,7 +193,7 @@ export default function AddProductForm() {
           )}
         </div>
 
-        {/* Price & Category (Grid Layout) */}
+        {/* Price & Category */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Price */}
           <div>
@@ -161,22 +226,24 @@ export default function AddProductForm() {
             <label className="block text-sm font-medium text-slate-700 mb-1 flex items-center gap-2">
               <Layers size={16} className="text-slate-400" /> Category
             </label>
-            <select
-              {...register("category", {
-                required: "Please select a category",
-              })}
-              className={`w-full p-3 border text-sm rounded-lg focus:outline-none focus:ring-2 bg-slate-50/50 appearance-none ${
-                errors.category
-                  ? "border-red-500 focus:ring-red-200"
-                  : "border-slate-200 focus:ring-slate-200 focus:border-slate-400"
-              }`}
-            >
-              <option value="">Select Category</option>
-              <option value="painting">Painting</option>
-              <option value="digital-art">Digital Art</option>
-              <option value="sculpture">Sculpture</option>
-              <option value="photography">Photography</option>
-            </select>
+            <div className="relative">
+              <select
+                {...register("category", {
+                  required: "Please select a category",
+                })}
+                className={`w-full p-3 border text-sm rounded-lg focus:outline-none focus:ring-2 bg-slate-50/50 appearance-none ${
+                  errors.category
+                    ? "border-red-500 focus:ring-red-200"
+                    : "border-slate-200 focus:ring-slate-200 focus:border-slate-400"
+                }`}
+              >
+                <option value="">Select Category</option>
+                <option value="painting">Painting</option>
+                <option value="digital-art">Digital Art</option>
+                <option value="sculpture">Sculpture</option>
+                <option value="photography">Photography</option>
+              </select>
+            </div>
             {errors.category && (
               <p className="text-xs text-red-500 mt-1 font-medium">
                 {errors.category.message}
@@ -185,24 +252,27 @@ export default function AddProductForm() {
           </div>
         </div>
 
-        {/* Image Upload Component */}
+        {/* Image Upload */}
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1 flex items-center gap-2">
-            <Image size={16} className="text-slate-400" /> Upload Image
+            <ImageIcon size={16} className="text-slate-400" /> Upload Image
           </label>
 
           <div className="mt-1 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-xl p-6 bg-slate-50/30 hover:bg-slate-50 transition-colors relative">
             {imagePreview ? (
-              <div className="relative w-full max-h-60 rounded-lg overflow-hidden flex justify-center">
-                <img
+              <div className="relative w-full h-60 rounded-lg overflow-hidden flex justify-center">
+                <Image
                   src={imagePreview}
                   alt="Preview"
-                  className="object-contain max-h-60 rounded-lg"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 600px"
+                  className="object-contain"
+                  priority
                 />
                 <button
                   type="button"
-                  onClick={() => setImagePreview(null)}
-                  className="absolute top-2 right-2 bg-slate-900/80 text-white p-1.5 rounded-full hover:bg-slate-950 transition-colors"
+                  onClick={handleRemovePreview}
+                  className="absolute top-2 right-2 bg-slate-900/80 text-white p-1.5 rounded-full hover:bg-slate-950 transition-colors z-10"
                 >
                   <X size={16} />
                 </button>
