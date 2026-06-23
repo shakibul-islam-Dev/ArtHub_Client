@@ -36,21 +36,21 @@ const salesData = [
 
 export default function SalesHistory() {
   return (
-    <div className="p-6 bg-slate-50 min-h-screen">
+    <div className="p-6 bg-background min-h-screen text-foreground transition-colors">
       {/* পেজ হেডিং */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-800">Sales History</h1>
-        <p className="text-sm text-slate-500">
+        <h1 className="text-2xl font-bold text-foreground">Sales History</h1>
+        <p className="text-sm text-muted-foreground">
           Track and manage your sold artworks details.
         </p>
       </div>
 
-      {/* টেবিল কন্টেইনার (মোবাইলে স্ক্রোল করার জন্য overflow-x-auto দেওয়া হয়েছে) */}
-      <div className="w-full bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
+      {/* টেবিল কন্টেইনার */}
+      <div className="w-full bg-card text-card-foreground rounded-xl border border-border shadow-sm overflow-x-auto">
         <table className="w-full text-left border-collapse">
           {/* টেবিল হেডার (Table Head) */}
           <thead>
-            <tr className="bg-slate-100 border-b border-slate-200 text-slate-700 text-sm font-semibold">
+            <tr className="bg-muted/50 border-b border-border text-muted-foreground text-sm font-semibold">
               <th className="p-4">Artwork Title</th>
               <th className="p-4">Buyer Name</th>
               <th className="p-4">Purchase Date</th>
@@ -59,19 +59,21 @@ export default function SalesHistory() {
           </thead>
 
           {/* টেবিল বডি (Table Body) */}
-          <tbody className="text-sm text-slate-600 divide-y divide-slate-100">
+          <tbody className="text-sm text-foreground/90 divide-y divide-border/40">
             {salesData.map((sale) => (
-              <tr key={sale.id} className="hover:bg-slate-50 transition-colors">
-                {/* আর্টওয়ার্ক টাইটেল */}
-                <td className="p-4 font-medium text-slate-800">
+              <tr key={sale.id} className="hover:bg-muted/30 transition-colors">
+                {/* আর্টওয়ার্ক টাইটেল */}
+                <td className="p-4 font-medium text-foreground">
                   {sale.artworkTitle}
                 </td>
-                {/* বায়ারের নাম */}
-                <td className="p-4">{sale.buyerName}</td>
-                {/* ক্রয়ের তারিখ */}
-                <td className="p-4">{sale.purchaseDate}</td>
-                {/* দাম বা অ্যামাউন্ট (ডান দিকে রাখা হয়েছে দেখতে সুন্দর লাগার জন্য) */}
-                <td className="p-4 text-right font-semibold text-emerald-600">
+                {/* বায়ারের নাম */}
+                <td className="p-4 text-muted-foreground">{sale.buyerName}</td>
+                {/* ক্রয়ের তারিখ */}
+                <td className="p-4 text-muted-foreground">
+                  {sale.purchaseDate}
+                </td>
+                {/* দাম বা অ্যামাউন্ট */}
+                <td className="p-4 text-right font-semibold text-emerald-600 dark:text-emerald-400">
                   {sale.amount}
                 </td>
               </tr>
@@ -79,9 +81,9 @@ export default function SalesHistory() {
           </tbody>
         </table>
 
-        {/* যদি কোনো ডেটা না থাকে তার জন্য সেফটি চেক (ঐচ্ছিক) */}
+        {/* যদি কোনো ডেটা না থাকে তার জন্য সেফটি চেক */}
         {salesData.length === 0 && (
-          <div className="p-8 text-center text-slate-400">
+          <div className="p-8 text-center text-muted-foreground">
             No sales history found.
           </div>
         )}

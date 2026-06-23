@@ -35,13 +35,13 @@ const BrowseArtworksPage = () => {
     fetchArtworks();
   }, []);
 
-  // 1. Extract unique categories dynamically from database results
+  // 1. Extract unique categories dynamically
   const categories = [
     "All",
     ...new Set(artworks.map((art) => art.category).filter(Boolean)),
   ];
 
-  // 2. Client-side Processing: Filter and Sort logic combined
+  // 2. Client-side Processing
   const processedArtworks = artworks
     .filter((art) => {
       const title = (art.title || "").toLowerCase();
@@ -69,30 +69,28 @@ const BrowseArtworksPage = () => {
       if (sortBy === "price-high") {
         return (b.price || 0) - (a.price || 0);
       }
-      // 'newest' fallback: sorting by date/id descending
       const dateA = a.createdAt || a._id || a.id || "";
       const dateB = b.createdAt || b._id || b.id || "";
       return dateB.localeCompare(dateA);
     });
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 p-6 md:p-10">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-800 dark:text-neutral-200 p-6 md:p-10 transition-colors duration-300">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header Section */}
-        <div className="border-b border-slate-200 pb-5">
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
+        <div className="border-b border-neutral-200 dark:border-neutral-800 pb-5">
+          <h1 className="text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-50">
             Browse Artworks
           </h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
             Displaying all original masterpieces directly from the database.
           </p>
         </div>
 
         {/* Search, Filter, and Sort Controls Panel */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-          {/* Search Input */}
+        <div className="bg-white dark:bg-neutral-900 p-5 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm grid grid-cols-1 md:grid-cols-4 gap-4 items-end transition-colors">
           <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-400">
+            <label className="text-xs font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
               Search
             </label>
             <input
@@ -100,19 +98,18 @@ const BrowseArtworksPage = () => {
               placeholder="Search by title or artist..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
+              className="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-500/20 focus:border-neutral-500 transition-colors"
             />
           </div>
 
-          {/* Category Filter */}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-400">
+            <label className="text-xs font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
               Category
             </label>
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
+              className="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-neutral-500/20 focus:border-neutral-500 transition-colors [&>option]:bg-white [&>option]:text-neutral-900 dark:[&>option]:bg-neutral-950 dark:[&>option]:text-neutral-100"
             >
               {categories.map((cat) => (
                 <option key={cat} value={cat}>
@@ -122,9 +119,8 @@ const BrowseArtworksPage = () => {
             </select>
           </div>
 
-          {/* Price Range Filter */}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-400">
+            <label className="text-xs font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
               Price Range ($)
             </label>
             <div className="flex items-center space-x-2">
@@ -133,28 +129,29 @@ const BrowseArtworksPage = () => {
                 placeholder="Min"
                 value={minPrice}
                 onChange={(e) => setMinPrice(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
+                className="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-3 py-2.5 text-sm text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-500/20 focus:border-neutral-500 transition-colors"
               />
-              <span className="text-slate-400 text-sm">to</span>
+              <span className="text-neutral-400 dark:text-neutral-500 text-sm">
+                to
+              </span>
               <input
                 type="number"
                 placeholder="Max"
                 value={maxPrice}
                 onChange={(e) => setMaxPrice(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
+                className="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-3 py-2.5 text-sm text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-500/20 focus:border-neutral-500 transition-colors"
               />
             </div>
           </div>
 
-          {/* Sorting */}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-400">
+            <label className="text-xs font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
               Sort By
             </label>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
+              className="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-neutral-500/20 focus:border-neutral-500 transition-colors [&>option]:bg-white [&>option]:text-neutral-900 dark:[&>option]:bg-neutral-950 dark:[&>option]:text-neutral-100"
             >
               <option value="newest">Newest Artworks</option>
               <option value="price-low">Price: Low to High</option>
@@ -169,7 +166,7 @@ const BrowseArtworksPage = () => {
             {[...Array(8)].map((_, index) => (
               <div
                 key={index}
-                className="space-y-4 border border-slate-100 p-4 rounded-2xl bg-white shadow-sm"
+                className="space-y-4 border border-neutral-200 dark:border-neutral-800 p-4 rounded-2xl bg-white dark:bg-neutral-900 shadow-sm"
               >
                 <Skeleton className="h-48 w-full rounded-xl" />
                 <div className="space-y-2">
@@ -194,40 +191,37 @@ const BrowseArtworksPage = () => {
               return (
                 <div
                   key={artId}
-                  className="group bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col cursor-pointer"
+                  className="group bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col cursor-pointer"
                 >
-                  {/* Image Container */}
-                  <div className="h-48 w-full overflow-hidden bg-slate-100 relative">
+                  <div className="relative w-full h-48 overflow-hidden bg-neutral-100 dark:bg-neutral-950">
                     <Image
                       src={artImage}
                       alt={art.title || "Artwork"}
-                      width={300}
-                      height={300}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      unoptimized
+                      fill
+                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                      className="object-cover group-hover:scale-105 transition-transform duration-500"
                     />
-                    <span className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm text-xs font-semibold px-2.5 py-1 rounded-full text-slate-700 shadow-sm">
+                    <span className="absolute top-3 right-3 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-sm text-xs font-semibold px-2.5 py-1 rounded-full text-neutral-700 dark:text-neutral-300 shadow-sm z-10">
                       {art.category || "Art"}
                     </span>
                   </div>
 
-                  {/* Artwork Details */}
                   <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
                     <div>
-                      <h3 className="font-bold text-slate-800 line-clamp-1 group-hover:text-blue-600 transition-colors">
+                      <h3 className="font-bold text-neutral-800 dark:text-neutral-100 line-clamp-1 group-hover:underline transition-colors">
                         {art.title || "Untitled"}
                       </h3>
-                      <p className="text-xs text-slate-400 mt-0.5">
+                      <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5">
                         by {artistName}
                       </p>
                     </div>
-                    <div className="flex items-center justify-between pt-2 border-t border-slate-50">
-                      <span className="text-lg font-black text-slate-900">
+                    <div className="flex items-center justify-between pt-2 border-t border-neutral-100 dark:border-neutral-800">
+                      <span className="text-lg font-black text-neutral-900 dark:text-neutral-50">
                         ${art.price || 0}
                       </span>
                       <Link
                         href={`/artwork-detail/${artId}`}
-                        className="text-xs font-bold text-blue-600 bg-blue-50 group-hover:bg-blue-600 group-hover:text-white px-3 py-1.5 rounded-lg transition-all"
+                        className="text-xs font-bold text-neutral-900 bg-neutral-100 dark:text-neutral-100 dark:bg-neutral-800 group-hover:bg-neutral-900 dark:group-hover:bg-neutral-700 group-hover:text-white dark:group-hover:text-neutral-50 px-3 py-1.5 rounded-lg transition-all"
                       >
                         View details
                       </Link>
@@ -238,8 +232,8 @@ const BrowseArtworksPage = () => {
             })}
           </div>
         ) : (
-          <div className="text-center py-16 bg-white border border-dashed border-slate-200 rounded-2xl">
-            <p className="text-slate-400 font-medium">
+          <div className="text-center py-16 bg-white dark:bg-neutral-900 border border-dashed border-neutral-200 dark:border-neutral-800 rounded-2xl">
+            <p className="text-neutral-400 dark:text-neutral-500 font-medium">
               No matching artworks found. Try refining your search parameters.
             </p>
           </div>

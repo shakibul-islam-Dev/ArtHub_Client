@@ -29,8 +29,8 @@ const stats = [
 
 const AnalyticsPage = () => {
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <h1 className="text-2xl font-bold mb-6 text-gray-800">
+    <div className="p-6 bg-neutral-50 dark:bg-neutral-950 min-h-screen transition-colors duration-300">
+      <h1 className="text-2xl font-bold mb-6 text-neutral-900 dark:text-neutral-50">
         Analytics Overview
       </h1>
 
@@ -39,12 +39,12 @@ const AnalyticsPage = () => {
         {stats.map((stat, index) => (
           <div
             key={index}
-            className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm transition-transform hover:shadow-md"
+            className="bg-white dark:bg-neutral-900 p-6 rounded-lg border border-neutral-200 dark:border-neutral-800 shadow-sm transition-transform hover:shadow-md"
           >
-            <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide">
+            <h3 className="text-sm font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">
               {stat.title}
             </h3>
-            <p className="text-3xl font-bold text-gray-900 mt-2">
+            <p className="text-3xl font-bold text-neutral-900 dark:text-neutral-50 mt-2">
               {stat.value}
             </p>
           </div>
@@ -52,8 +52,8 @@ const AnalyticsPage = () => {
       </div>
 
       {/* Chart Section */}
-      <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-        <h2 className="text-lg font-semibold mb-6 text-gray-700">
+      <div className="bg-white dark:bg-neutral-900 p-6 rounded-lg border border-neutral-200 dark:border-neutral-800 shadow-sm">
+        <h2 className="text-lg font-semibold mb-6 text-neutral-700 dark:text-neutral-200">
           Revenue Trend
         </h2>
         <div className="h-[300px] w-full">
@@ -65,30 +65,35 @@ const AnalyticsPage = () => {
               <CartesianGrid
                 strokeDasharray="3 3"
                 vertical={false}
-                stroke="#f0f0f0"
+                stroke="currentColor"
+                className="text-neutral-200 dark:text-neutral-800"
               />
               <XAxis
                 dataKey="name"
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: "#6b7280" }}
+                tick={{ fill: "currentColor" }}
+                className="text-neutral-500 dark:text-neutral-400"
               />
               <YAxis
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: "#6b7280" }}
+                tick={{ fill: "currentColor" }}
+                className="text-neutral-500 dark:text-neutral-400"
               />
               <Tooltip
                 contentStyle={{
                   borderRadius: "8px",
                   border: "none",
+                  backgroundColor: "var(--background)",
                   boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
                 }}
               />
               <Line
                 type="monotone"
                 dataKey="sales"
-                stroke="#3b82f6"
+                stroke="currentColor"
+                className="text-neutral-900 dark:text-neutral-100"
                 strokeWidth={3}
                 dot={{ r: 4, strokeWidth: 2 }}
                 activeDot={{ r: 6 }}

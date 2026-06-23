@@ -8,16 +8,18 @@ const DashboardParentLayout = async ({ children }) => {
   });
 
   return (
-    <div className="flex h-screen w-screen bg-slate-50 overflow-hidden relative">
-      <div className="md:block lg:w-64 shrink-0 z-50">
+    <div className="flex h-screen w-screen bg-white dark:bg-black text-neutral-900 dark:text-neutral-100 overflow-hidden transition-colors duration-300">
+      {/* Sidebar - no extra padding/margins */}
+      <div className="hidden md:flex lg:w-64 shrink-0 border-r border-neutral-200 dark:border-neutral-800 bg-white dark:bg-black">
         <DashboardSideBar session={session} />
       </div>
 
-      <div className="flex-1 flex flex-col min-w-0 h-full relative w-full">
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 bg-slate-50/50">
+      {/* Main Content Area - direct integration */}
+      <main className="flex-1 h-full overflow-y-auto bg-neutral-50 dark:bg-neutral-950">
+        <div className="w-full h-full p-4 sm:p-6 md:p-8">
           <div className="max-w-7xl mx-auto w-full">{children}</div>
-        </main>
-      </div>
+        </div>
+      </main>
     </div>
   );
 };

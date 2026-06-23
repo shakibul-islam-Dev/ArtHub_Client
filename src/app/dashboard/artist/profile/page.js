@@ -37,7 +37,7 @@ export default function ProfileUpdateForm() {
       phone: "",
       password: "",
       confirmPassword: "",
-      externalImageUrl: "", // নতুন ফিল্ডের ডিফল্ট ভ্যালু
+      externalImageUrl: "",
     },
   });
 
@@ -88,7 +88,7 @@ export default function ProfileUpdateForm() {
     const file = e.target.files?.[0];
     if (file) {
       setImageFile(file);
-      setValue("externalImageUrl", ""); // ফাইল সিলেক্ট করলে ইউআরএল ফিল্ড খালি করে দেওয়া
+      setValue("externalImageUrl", "");
 
       if (imagePreview && imagePreview.startsWith("blob:")) {
         URL.revokeObjectURL(imagePreview);
@@ -100,11 +100,9 @@ export default function ProfileUpdateForm() {
 
   // --- ImgBB তে ইমেজ আপলোড করার ফাংশন ---
   const uploadToImgBB = async (imageSource) => {
-    // এখানে আপনার নিজের ImgBB API Key বসাবেন
     const IMGBBB_API_KEY = "YOUR_IMGBB_API_KEY_HERE";
     const formData = new FormData();
 
-    // যদি সোর্সটি ফাইল অবজেক্ট হয় তবে সরাসরি যুক্ত হবে, নতুবা ইউআরএল টেক্সট হিসেবে যাবে
     formData.append("image", imageSource);
 
     try {
@@ -118,7 +116,7 @@ export default function ProfileUpdateForm() {
 
       const result = await response.json();
       if (result.success) {
-        return result.data.url; // ImgBB এর স্থায়ী ইমেজ লিংক
+        return result.data.url;
       } else {
         throw new Error(result.error?.message || "ImgBB upload failed");
       }
@@ -132,15 +130,12 @@ export default function ProfileUpdateForm() {
   // ফর্ম সাবমিট হ্যান্ডলার
   const onSubmit = async (data) => {
     setIsSubmitting(true);
-    let finalProfileImage = imagePreview; // ডিফল্ট বা বর্তমান ইমেজ
+    let finalProfileImage = imagePreview;
 
-    // ১. যদি নতুন লোকাল ফাইল আপলোড করা হয়
     if (imageFile) {
       const uploadedUrl = await uploadToImgBB(imageFile);
       if (uploadedUrl) finalProfileImage = uploadedUrl;
-    }
-    // ২. যদি লোকাল ফাইল না থাকে কিন্তু এক্সটার্নাল ইউআরএল দেওয়া হয়
-    else if (data.externalImageUrl) {
+    } else if (data.externalImageUrl) {
       const uploadedUrl = await uploadToImgBB(data.externalImageUrl);
       if (uploadedUrl) finalProfileImage = uploadedUrl;
     }
@@ -150,24 +145,23 @@ export default function ProfileUpdateForm() {
       email: data.email,
       phone: data.phone,
       ...(data.password && { password: data.password }),
-      profileImage: finalProfileImage, // এই লিংকে এখন ImgBB এর URL থাকবে
+      profileImage: finalProfileImage,
     };
 
     console.log("🚀 LIVE FORM DATA SUBMITTING TO BACKEND:", payload);
-
     alert("Changes logged in console! Final Image URL: " + finalProfileImage);
     setIsSubmitting(false);
   };
 
   return (
-    <div className="p-6 bg-slate-50 min-h-screen flex justify-center items-start">
-      <div className="w-full max-w-2xl bg-white rounded-2xl border border-slate-200 shadow-sm p-6 md:p-8">
+    <div className="p-6 bg-background min-h-screen flex justify-center items-start text-foreground transition-colors">
+      <div className="w-full max-w-2xl bg-card rounded-2xl border border-border shadow-sm p-6 md:p-8">
         {/* হেডার */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-slate-800">
+          <h1 className="text-2xl font-bold text-foreground">
             Account Settings
           </h1>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted-foreground">
             Update your profile data and images.
           </p>
         </div>
@@ -175,25 +169,25 @@ export default function ProfileUpdateForm() {
         {/* ফর্ম */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {/* প্রোফাইল ইমেজ সেকশন */}
-          <div className="flex flex-col items-center sm:flex-row sm:space-x-6 border-b border-slate-100 pb-6">
-            <div className="relative w-24 h-24 bg-slate-900 rounded-full border border-slate-200 flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
+          <div className="flex flex-col items-center sm:flex-row sm:space-x-6 border-b border-border pb-6">
+            <div className="relative w-24 h-24 bg-muted rounded-full border border-border flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
               {imagePreview ? (
                 <Image
                   src={imagePreview}
                   alt="Preview"
                   fill
                   className="object-cover"
-                  unoptimized // এক্সটার্নাল ও লোকাল ব্লব ইউআরএল সহজে দেখানোর জন্য
+                  unoptimized
                 />
               ) : (
-                <span className="text-3xl font-bold text-white select-none">
+                <span className="text-3xl font-bold text-muted-foreground select-none">
                   {getInitials(session?.user?.name)}
                 </span>
               )}
 
               <label
                 htmlFor="avatar"
-                className="absolute bottom-0 right-0 bg-slate-800 p-1.5 rounded-full text-white cursor-pointer hover:bg-slate-700 transition-colors z-10"
+                className="absolute bottom-0 right-0 bg-primary p-1.5 rounded-full text-primary-foreground cursor-pointer hover:opacity-90 transition-opacity z-10"
               >
                 <Camera size={14} />
               </label>
@@ -207,13 +201,13 @@ export default function ProfileUpdateForm() {
             </div>
 
             <div className="text-center sm:text-left mt-3 sm:mt-0">
-              <h2 className="text-lg font-bold text-slate-800">
+              <h2 className="text-lg font-bold text-foreground">
                 {session?.user?.name || "Loading Name..."}
               </h2>
-              <h3 className="text-xs font-semibold text-slate-500 mt-0.5">
+              <h3 className="text-xs font-semibold text-muted-foreground mt-0.5">
                 Profile Picture
               </h3>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-muted-foreground/80 mt-1">
                 Upload a file OR provide an external image URL below.
               </p>
             </div>
@@ -223,20 +217,20 @@ export default function ProfileUpdateForm() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* ১. নাম */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                <User size={16} className="text-slate-400" /> Full Name
+              <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                <User size={16} className="text-muted-foreground" /> Full Name
               </label>
               <input
                 type="text"
-                className={`w-full p-3 border rounded-lg text-sm bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-100 ${
+                className={`w-full p-3 border rounded-lg text-sm bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 ${
                   errors.name
-                    ? "border-red-500 focus:ring-red-100"
-                    : "border-slate-200 focus:border-slate-400"
+                    ? "border-destructive focus:ring-destructive/20"
+                    : "border-border focus:ring-ring focus:border-primary"
                 }`}
                 {...register("name", { required: "Name is required" })}
               />
               {errors.name && (
-                <span className="text-xs text-red-500 font-medium">
+                <span className="text-xs text-destructive font-medium">
                   {errors.name.message}
                 </span>
               )}
@@ -244,20 +238,21 @@ export default function ProfileUpdateForm() {
 
             {/* ২. ইমেইল */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                <Mail size={16} className="text-slate-400" /> Email Address
+              <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                <Mail size={16} className="text-muted-foreground" /> Email
+                Address
               </label>
               <input
                 type="email"
-                className={`w-full p-3 border rounded-lg text-sm bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-100 ${
+                className={`w-full p-3 border rounded-lg text-sm bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 ${
                   errors.email
-                    ? "border-red-500 focus:ring-red-100"
-                    : "border-slate-200 focus:border-slate-400"
+                    ? "border-destructive focus:ring-destructive/20"
+                    : "border-border focus:ring-ring focus:border-primary"
                 }`}
                 {...register("email", { required: "Email is required" })}
               />
               {errors.email && (
-                <span className="text-xs text-red-500 font-medium">
+                <span className="text-xs text-destructive font-medium">
                   {errors.email.message}
                 </span>
               )}
@@ -265,50 +260,51 @@ export default function ProfileUpdateForm() {
 
             {/* ৩. ফোন নাম্বার */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                <Phone size={16} className="text-slate-400" /> Phone Number
+              <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                <Phone size={16} className="text-muted-foreground" /> Phone
+                Number
               </label>
               <input
                 type="tel"
-                className="w-full p-3 border border-slate-200 rounded-lg text-sm bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-100 focus:border-slate-400"
+                className="w-full p-3 border border-border rounded-lg text-sm bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary"
                 {...register("phone")}
               />
             </div>
 
-            {/* [নতুন ফিল্ড] এক্সটার্নাল ইমেজ ইউআরএল */}
+            {/* এক্সটার্নাল ইমেজ ইউআরএল */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                <LinkIcon size={16} className="text-slate-400" /> External Image
-                URL
+              <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                <LinkIcon size={16} className="text-muted-foreground" />{" "}
+                External Image URL
               </label>
               <input
                 type="url"
                 placeholder="https://example.com/image.jpg"
-                className="w-full p-3 border border-slate-200 rounded-lg text-sm bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-100 focus:border-slate-400"
+                className="w-full p-3 border border-border rounded-lg text-sm bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary"
                 {...register("externalImageUrl")}
               />
             </div>
 
             {/* ৪. নতুন পাসওয়ার্ড */}
             <div className="flex flex-col gap-1.5 md:col-start-1">
-              <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                <Lock size={16} className="text-slate-400" /> New Password
-                (Optional)
+              <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                <Lock size={16} className="text-muted-foreground" /> New
+                Password (Optional)
               </label>
               <input
                 type="password"
                 placeholder="Leave blank to keep old password"
-                className={`w-full p-3 border rounded-lg text-sm bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-100 ${
+                className={`w-full p-3 border rounded-lg text-sm bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 ${
                   errors.password
-                    ? "border-red-500 focus:ring-red-100"
-                    : "border-slate-200 focus:border-slate-400"
+                    ? "border-destructive focus:ring-destructive/20"
+                    : "border-border focus:ring-ring focus:border-primary"
                 }`}
                 {...register("password", {
                   minLength: { value: 6, message: "Minimum 6 characters" },
                 })}
               />
               {errors.password && (
-                <span className="text-xs text-red-500 font-medium">
+                <span className="text-xs text-destructive font-medium">
                   {errors.password.message}
                 </span>
               )}
@@ -316,16 +312,17 @@ export default function ProfileUpdateForm() {
 
             {/* ৫. কনফার্ম পাসওয়ার্ড */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                <Lock size={16} className="text-slate-400" /> Confirm Password
+              <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                <Lock size={16} className="text-muted-foreground" /> Confirm
+                Password
               </label>
               <input
                 type="password"
                 placeholder="••••••••"
-                className={`w-full p-3 border rounded-lg text-sm bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-100 ${
+                className={`w-full p-3 border rounded-lg text-sm bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 ${
                   errors.confirmPassword
-                    ? "border-red-500 focus:ring-red-100"
-                    : "border-slate-200 focus:border-slate-400"
+                    ? "border-destructive focus:ring-destructive/20"
+                    : "border-border focus:ring-ring focus:border-primary"
                 }`}
                 {...register("confirmPassword", {
                   validate: (value) =>
@@ -333,7 +330,7 @@ export default function ProfileUpdateForm() {
                 })}
               />
               {errors.confirmPassword && (
-                <span className="text-xs text-red-500 font-medium">
+                <span className="text-xs text-destructive font-medium">
                   {errors.confirmPassword.message}
                 </span>
               )}
@@ -341,11 +338,11 @@ export default function ProfileUpdateForm() {
           </div>
 
           {/* সাবমিট বাটন */}
-          <div className="flex justify-end pt-4 border-t border-slate-100">
+          <div className="flex justify-end pt-4 border-t border-border">
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex items-center gap-2 px-6 py-3 bg-slate-800 hover:bg-slate-900 disabled:bg-slate-400 text-white rounded-lg text-sm font-medium transition-colors shadow-sm cursor-pointer"
+              className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground hover:opacity-90 disabled:bg-muted disabled:text-muted-foreground rounded-lg text-sm font-medium transition-all shadow-sm cursor-pointer"
             >
               {isSubmitting ? (
                 <>

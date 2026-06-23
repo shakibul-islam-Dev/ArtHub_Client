@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import { Check, Zap, Crown, Sparkles } from "lucide-react";
 
@@ -12,7 +14,10 @@ const subscriptionTiers = [
     ],
     buttonText: "Get Started",
     popular: false,
-    icon: <Sparkles className="w-6 h-6 text-emerald-500" />,
+    icon: <Sparkles className="w-6 h-6 text-emerald-600" />,
+    bgImage:
+      "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?q=80&w=600&auto=format&fit=crop",
+    gradient: "from-background/60 via-background/20 to-background/70",
   },
   {
     name: "Pro",
@@ -25,7 +30,10 @@ const subscriptionTiers = [
     ],
     buttonText: "Upgrade to Pro",
     popular: true,
-    icon: <Zap className="w-6 h-6 text-violet-500" />,
+    icon: <Zap className="w-6 h-6 text-violet-600" />,
+    bgImage:
+      "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop",
+    gradient: "from-violet-950/40 via-background/20 to-background/70",
   },
   {
     name: "Premium",
@@ -39,73 +47,111 @@ const subscriptionTiers = [
     ],
     buttonText: "Go Premium",
     popular: false,
-    icon: <Crown className="w-6 h-6 text-amber-500" />,
+    icon: <Crown className="w-6 h-6 text-amber-600" />,
+    bgImage:
+      "https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?q=80&w=600&auto=format&fit=crop",
+    gradient: "from-amber-950/40 via-background/20 to-background/70",
   },
 ];
 
 export default function SubscriptionCards({ activePlanName }) {
   return (
-    // মেইন কন্টেইনারে dark:bg-slate-950 এবং light mode এর জন্য bg-slate-50
-    <div className="bg-slate-50 dark:bg-[#0b0f19] text-slate-900 dark:text-slate-100 min-h-screen py-16 px-4">
+    <div className="bg-transparent text-foreground min-h-screen py-16 px-4">
+      {/* Top Header Section */}
       <div className="text-center max-w-2xl mx-auto mb-16">
-        <h2 className="text-4xl font-bold mb-4">Choose Your Plan</h2>
-        <p className="text-slate-600 dark:text-slate-400">
-          Unlock your creative potential.
+        <h2 className="text-4xl font-bold tracking-tight mb-4 sm:text-5xl">
+          Choose Your Plan
+        </h2>
+        <p className="text-base opacity-70">
+          Unlock your creative potential and build your elite art masterpiece
+          collection.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+      {/* Subscription Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto items-start">
         {subscriptionTiers.map((tier) => {
           const isCurrent = tier.name === activePlanName;
 
           return (
             <div
               key={tier.name}
-              className={`relative rounded-2xl p-8 border transition-all duration-300 flex flex-col justify-between 
-                ${tier.popular ? "border-violet-500 shadow-lg" : "border-slate-200 dark:border-slate-700"}
-                bg-white dark:bg-slate-900/50`}
+              style={{ backgroundImage: `url(${tier.bgImage})` }}
+              className={`relative rounded-2xl p-8 border transition-all duration-300 flex flex-col justify-between min-h-[520px] bg-cover bg-center overflow-hidden group
+                ${isCurrent ? "border-emerald-500 shadow-lg shadow-emerald-500/10" : ""}
+                ${tier.popular && !isCurrent ? "border-violet-500 shadow-md shadow-violet-500/10 scale-105 md:scale-105 z-10" : "border-border shadow-sm hover:scale-[1.02]"}
+              `}
             >
+              {/* মিক্স ব্লেন্ড ওভারলে: ইমেজ থিম অনুযায়ী ও ব্যাকগ্রাউন্ড কালার ডাইনামিক করতে */}
+              <div
+                className={`absolute inset-0 bg-gradient-to-b ${tier.gradient} mix-blend-multiply opacity-90 pointer-events-none`}
+              />
+
+              {/* Active Plan Badge */}
               {isCurrent && (
-                <div className="absolute top-0 right-0 bg-emerald-500 text-white text-[10px] px-2 py-0.5 rounded-bl-lg font-bold">
-                  YOUR PLAN
+                <div className="absolute top-0 right-0 bg-emerald-500 text-white text-[10px] px-3 py-1 rounded-bl-xl font-bold tracking-wider uppercase z-20">
+                  Your Plan
                 </div>
               )}
 
+              {/* Popular Badge */}
               {tier.popular && !isCurrent && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-violet-600 text-white text-xs px-3 py-1 rounded-full uppercase">
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-violet-600 text-white text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm z-20">
                   Most Popular
                 </span>
               )}
 
-              <div>
+              {/* Card Content */}
+              <div className="relative z-10 text-white">
                 <div className="flex justify-between items-center mb-6">
-                  <span className="text-xl font-bold">{tier.name}</span>
-                  {tier.icon}
+                  <span className="text-xl font-bold drop-shadow-sm">
+                    {tier.name}
+                  </span>
+                  <div className="p-2 rounded-xl bg-white/90 backdrop-blur-sm shadow-sm">
+                    {tier.icon}
+                  </div>
                 </div>
+
                 <div className="mb-8">
-                  <span className="text-4xl font-extrabold">{tier.price}</span>
-                  <span className="text-slate-500 text-sm">/ month</span>
+                  <span className="text-4xl font-extrabold drop-shadow-md">
+                    {tier.price}
+                  </span>
+                  <span className="text-white/80 text-sm font-medium drop-shadow-sm">
+                    / month
+                  </span>
                 </div>
+
+                {/* Features List */}
                 <ul className="space-y-4 mb-8">
                   {tier.features.map((feature, idx) => (
-                    <li key={idx} className="flex items-center gap-3 text-sm">
-                      <Check className="w-4 h-4 text-emerald-500" />
-                      <span className="text-slate-600 dark:text-slate-300">
+                    <li key={idx} className="flex items-start gap-3 text-sm">
+                      <div className="p-0.5 rounded-full bg-white/90 shrink-0 mt-0.5 shadow-sm">
+                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      </div>
+                      <span className="font-semibold drop-shadow-sm">
                         {feature}
                       </span>
                     </li>
                   ))}
                 </ul>
               </div>
-              <form action={`/api/subscription`} method="POST">
+
+              {/* Submit Action */}
+              <form
+                action={`/api/subscription`}
+                method="POST"
+                className="relative z-10 mt-auto"
+              >
+                <input type="hidden" name="planName" value={tier.name} />
                 <button
                   type="submit"
-                  className={`w-full py-3 rounded-xl font-bold transition-colors ${
+                  disabled={isCurrent}
+                  className={`w-full py-3 rounded-xl font-bold text-sm transition-all duration-200 ${
                     isCurrent
-                      ? "bg-slate-200 dark:bg-slate-700 cursor-default"
+                      ? "bg-white/20 text-white/60 backdrop-blur-sm cursor-not-allowed border border-white/10"
                       : tier.popular
-                        ? "bg-violet-600 text-white hover:bg-violet-700"
-                        : "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
+                        ? "bg-violet-600 text-white hover:bg-violet-700 hover:shadow-md hover:shadow-violet-600/20 active:scale-[0.98]"
+                        : "bg-primary text-primary-foreground hover:opacity-90 active:scale-[0.98]"
                   }`}
                 >
                   {isCurrent ? "Current Plan" : tier.buttonText}

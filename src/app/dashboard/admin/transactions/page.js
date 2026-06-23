@@ -30,46 +30,73 @@ const transactions = [
 
 const TransactionsPage = () => {
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <h1 className="text-2xl font-bold mb-6 text-gray-800">Transactions</h1>
+    <div className="p-6 bg-neutral-50 dark:bg-neutral-950 min-h-screen transition-colors duration-300">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-2xl font-bold mb-6 text-neutral-900 dark:text-neutral-50">
+          Transactions
+        </h1>
 
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <table className="w-full text-left">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="p-4 font-semibold text-gray-700">
-                Transaction ID
-              </th>
-              <th className="p-4 font-semibold text-gray-700">Type</th>
-              <th className="p-4 font-semibold text-gray-700">User</th>
-              <th className="p-4 font-semibold text-gray-700">Artist Email</th>
-              <th className="p-4 font-semibold text-gray-700">Amount</th>
-              <th className="p-4 font-semibold text-gray-700">Date</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {transactions.map((txn) => (
-              <tr key={txn.id} className="hover:bg-gray-50">
-                <td className="p-4 text-gray-600 font-mono">{txn.id}</td>
-                <td className="p-4">
-                  <span
-                    className={`px-2 py-1 rounded text-xs font-semibold ${
-                      txn.type === "Subscription"
-                        ? "bg-blue-100 text-blue-700"
-                        : "bg-green-100 text-green-700"
-                    }`}
-                  >
-                    {txn.type}
-                  </span>
-                </td>
-                <td className="p-4 text-gray-800">{txn.user}</td>
-                <td className="p-4 text-gray-600">{txn.email}</td>
-                <td className="p-4 text-gray-800 font-medium">{txn.amount}</td>
-                <td className="p-4 text-gray-600">{txn.date}</td>
+        <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm overflow-hidden">
+          <table className="w-full text-left">
+            <thead className="bg-neutral-50 dark:bg-neutral-950 border-b border-neutral-200 dark:border-neutral-800">
+              <tr>
+                <th className="p-4 font-semibold text-neutral-700 dark:text-neutral-300">
+                  Transaction ID
+                </th>
+                <th className="p-4 font-semibold text-neutral-700 dark:text-neutral-300">
+                  Type
+                </th>
+                <th className="p-4 font-semibold text-neutral-700 dark:text-neutral-300">
+                  User
+                </th>
+                <th className="p-4 font-semibold text-neutral-700 dark:text-neutral-300">
+                  Artist Email
+                </th>
+                <th className="p-4 font-semibold text-neutral-700 dark:text-neutral-300">
+                  Amount
+                </th>
+                <th className="p-4 font-semibold text-neutral-700 dark:text-neutral-300">
+                  Date
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
+              {transactions.map((txn) => (
+                <tr
+                  key={txn.id}
+                  className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors"
+                >
+                  <td className="p-4 text-neutral-600 dark:text-neutral-400 font-mono text-sm">
+                    {txn.id}
+                  </td>
+                  <td className="p-4">
+                    <span
+                      className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                        txn.type === "Subscription"
+                          ? "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400"
+                          : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                      }`}
+                    >
+                      {txn.type}
+                    </span>
+                  </td>
+                  <td className="p-4 text-neutral-900 dark:text-neutral-100">
+                    {txn.user}
+                  </td>
+                  <td className="p-4 text-neutral-600 dark:text-neutral-400">
+                    {txn.email}
+                  </td>
+                  <td className="p-4 text-neutral-900 dark:text-neutral-50 font-medium">
+                    {txn.amount}
+                  </td>
+                  <td className="p-4 text-neutral-600 dark:text-neutral-400">
+                    {txn.date}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

@@ -130,17 +130,17 @@ export default function AddProductForm() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto bg-white border border-slate-200 rounded-xl p-6 shadow-sm my-8">
+    <div className="max-w-2xl mx-auto bg-card text-card-foreground border border-border rounded-xl p-6 shadow-sm my-8 transition-colors">
       {/* Header */}
-      <div className="flex items-center gap-3 border-b border-slate-100 pb-4 mb-6">
-        <div className="p-2 bg-slate-100 rounded-lg text-slate-800">
+      <div className="flex items-center gap-3 border-b border-border pb-4 mb-6">
+        <div className="p-2 bg-muted text-muted-foreground rounded-lg">
           <UploadCloud size={24} />
         </div>
         <div>
-          <h2 className="text-xl font-bold text-slate-800">
+          <h2 className="text-xl font-bold text-foreground">
             Add New Artwork / Product
           </h2>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-muted-foreground">
             Fill in the details below to upload your items.
           </p>
         </div>
@@ -149,21 +149,21 @@ export default function AddProductForm() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         {/* Title */}
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1 flex items-center gap-2">
-            <Type size={16} className="text-slate-400" /> Title
+          <label className="block text-sm font-medium text-foreground mb-1 flex items-center gap-2">
+            <Type size={16} className="text-muted-foreground" /> Title
           </label>
           <input
             type="text"
             placeholder="Enter title"
             {...register("title", { required: "Title is required" })}
-            className={`w-full p-3 border text-sm rounded-lg focus:outline-none focus:ring-2 bg-slate-50/50 ${
+            className={`w-full p-3 border text-sm rounded-lg focus:outline-none focus:ring-2 bg-transparent text-foreground placeholder:text-muted-foreground ${
               errors.title
-                ? "border-red-500 focus:ring-red-200"
-                : "border-slate-200 focus:ring-slate-200 focus:border-slate-400"
+                ? "border-destructive focus:ring-destructive/20"
+                : "border-border focus:ring-ring focus:border-primary"
             }`}
           />
           {errors.title && (
-            <p className="text-xs text-red-500 mt-1 font-medium">
+            <p className="text-xs text-destructive mt-1 font-medium">
               {errors.title.message}
             </p>
           )}
@@ -171,8 +171,8 @@ export default function AddProductForm() {
 
         {/* Description */}
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1 flex items-center gap-2">
-            <FileText size={16} className="text-slate-400" /> Description
+          <label className="block text-sm font-medium text-foreground mb-1 flex items-center gap-2">
+            <FileText size={16} className="text-muted-foreground" /> Description
           </label>
           <textarea
             rows="4"
@@ -180,14 +180,14 @@ export default function AddProductForm() {
             {...register("description", {
               required: "Description is required",
             })}
-            className={`w-full p-3 border text-sm rounded-lg focus:outline-none focus:ring-2 bg-slate-50/50 ${
+            className={`w-full p-3 border text-sm rounded-lg focus:outline-none focus:ring-2 bg-transparent text-foreground placeholder:text-muted-foreground ${
               errors.description
-                ? "border-red-500 focus:ring-red-200"
-                : "border-slate-200 focus:ring-slate-200 focus:border-slate-400"
+                ? "border-destructive focus:ring-destructive/20"
+                : "border-border focus:ring-ring focus:border-primary"
             }`}
           />
           {errors.description && (
-            <p className="text-xs text-red-500 mt-1 font-medium">
+            <p className="text-xs text-destructive mt-1 font-medium">
               {errors.description.message}
             </p>
           )}
@@ -197,8 +197,9 @@ export default function AddProductForm() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Price */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1 flex items-center gap-2">
-              <DollarSign size={16} className="text-slate-400" /> Price ($)
+            <label className="block text-sm font-medium text-foreground mb-1 flex items-center gap-2">
+              <DollarSign size={16} className="text-muted-foreground" /> Price
+              ($)
             </label>
             <input
               type="number"
@@ -208,14 +209,14 @@ export default function AddProductForm() {
                 required: "Price is required",
                 min: { value: 0, message: "Price cannot be negative" },
               })}
-              className={`w-full p-3 border text-sm rounded-lg focus:outline-none focus:ring-2 bg-slate-50/50 ${
+              className={`w-full p-3 border text-sm rounded-lg focus:outline-none focus:ring-2 bg-transparent text-foreground placeholder:text-muted-foreground ${
                 errors.price
-                  ? "border-red-500 focus:ring-red-200"
-                  : "border-slate-200 focus:ring-slate-200 focus:border-slate-400"
+                  ? "border-destructive focus:ring-destructive/20"
+                  : "border-border focus:ring-ring focus:border-primary"
               }`}
             />
             {errors.price && (
-              <p className="text-xs text-red-500 mt-1 font-medium">
+              <p className="text-xs text-destructive mt-1 font-medium">
                 {errors.price.message}
               </p>
             )}
@@ -223,29 +224,54 @@ export default function AddProductForm() {
 
           {/* Category */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1 flex items-center gap-2">
-              <Layers size={16} className="text-slate-400" /> Category
+            <label className="block text-sm font-medium text-foreground mb-1 flex items-center gap-2">
+              <Layers size={16} className="text-muted-foreground" /> Category
             </label>
             <div className="relative">
               <select
                 {...register("category", {
                   required: "Please select a category",
                 })}
-                className={`w-full p-3 border text-sm rounded-lg focus:outline-none focus:ring-2 bg-slate-50/50 appearance-none ${
+                className={`w-full p-3 border text-sm rounded-lg focus:outline-none focus:ring-2 bg-transparent text-foreground focus:ring-ring focus:border-primary transition-colors [&>option]:bg-[hsl(var(--card))] [&>option]:text-[hsl(var(--foreground))] appearance-none ${
                   errors.category
-                    ? "border-red-500 focus:ring-red-200"
-                    : "border-slate-200 focus:ring-slate-200 focus:border-slate-400"
+                    ? "border-destructive focus:ring-destructive/20"
+                    : "border-border"
                 }`}
               >
-                <option value="">Select Category</option>
-                <option value="painting">Painting</option>
-                <option value="digital-art">Digital Art</option>
-                <option value="sculpture">Sculpture</option>
-                <option value="photography">Photography</option>
+                <option
+                  value=""
+                  className="bg-[hsl(var(--card))] text-[hsl(var(--foreground))]"
+                >
+                  Select Category
+                </option>
+                <option
+                  value="painting"
+                  className="bg-[hsl(var(--card))] text-[hsl(var(--foreground))]"
+                >
+                  Painting
+                </option>
+                <option
+                  value="digital-art"
+                  className="bg-[hsl(var(--card))] text-[hsl(var(--foreground))]"
+                >
+                  Digital Art
+                </option>
+                <option
+                  value="sculpture"
+                  className="bg-[hsl(var(--card))] text-[hsl(var(--foreground))]"
+                >
+                  Sculpture
+                </option>
+                <option
+                  value="photography"
+                  className="bg-[hsl(var(--card))] text-[hsl(var(--foreground))]"
+                >
+                  Photography
+                </option>
               </select>
             </div>
             {errors.category && (
-              <p className="text-xs text-red-500 mt-1 font-medium">
+              <p className="text-xs text-destructive mt-1 font-medium">
                 {errors.category.message}
               </p>
             )}
@@ -254,11 +280,12 @@ export default function AddProductForm() {
 
         {/* Image Upload */}
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1 flex items-center gap-2">
-            <ImageIcon size={16} className="text-slate-400" /> Upload Image
+          <label className="block text-sm font-medium text-foreground mb-1 flex items-center gap-2">
+            <ImageIcon size={16} className="text-muted-foreground" /> Upload
+            Image
           </label>
 
-          <div className="mt-1 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-xl p-6 bg-slate-50/30 hover:bg-slate-50 transition-colors relative">
+          <div className="mt-1 flex flex-col items-center justify-center border-2 border-dashed border-border rounded-xl p-6 bg-muted/20 hover:bg-muted/40 transition-colors relative">
             {imagePreview ? (
               <div className="relative w-full h-60 rounded-lg overflow-hidden flex justify-center">
                 <Image
@@ -272,16 +299,19 @@ export default function AddProductForm() {
                 <button
                   type="button"
                   onClick={handleRemovePreview}
-                  className="absolute top-2 right-2 bg-slate-900/80 text-white p-1.5 rounded-full hover:bg-slate-950 transition-colors z-10"
+                  className="absolute top-2 right-2 bg-foreground/80 text-background p-1.5 rounded-full hover:bg-foreground transition-colors z-10"
                 >
                   <X size={16} />
                 </button>
               </div>
             ) : (
               <div className="text-center space-y-1">
-                <UploadCloud className="mx-auto text-slate-400" size={36} />
-                <div className="flex text-sm text-slate-600">
-                  <label className="relative cursor-pointer bg-white rounded-md font-semibold text-slate-800 hover:text-slate-950 focus-within:outline-none">
+                <UploadCloud
+                  className="mx-auto text-muted-foreground"
+                  size={36}
+                />
+                <div className="flex text-sm text-foreground">
+                  <label className="relative cursor-pointer bg-transparent rounded-md font-semibold text-primary hover:underline focus-within:outline-none">
                     <span>Upload a file</span>
                     <input
                       type="file"
@@ -293,16 +323,16 @@ export default function AddProductForm() {
                       })}
                     />
                   </label>
-                  <p className="pl-1 text-slate-500">or drag and drop</p>
+                  <p className="pl-1 text-muted-foreground">or drag and drop</p>
                 </div>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-muted-foreground">
                   PNG, JPG, WEBP up to 5MB
                 </p>
               </div>
             )}
           </div>
           {errors.image && (
-            <p className="text-xs text-red-500 mt-1 font-medium">
+            <p className="text-xs text-destructive mt-1 font-medium">
               {errors.image.message}
             </p>
           )}
@@ -312,7 +342,7 @@ export default function AddProductForm() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full mt-2 p-3 bg-slate-900 text-white font-medium text-sm rounded-lg hover:bg-slate-800 transition-colors disabled:bg-slate-400 flex items-center justify-center gap-2"
+          className="w-full mt-2 p-3 bg-primary text-primary-foreground font-medium text-sm rounded-lg hover:opacity-90 transition-opacity disabled:bg-muted disabled:text-muted-foreground flex items-center justify-center gap-2"
         >
           {isSubmitting ? (
             <>

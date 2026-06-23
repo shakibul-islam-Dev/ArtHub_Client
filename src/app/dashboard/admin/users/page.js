@@ -17,52 +17,65 @@ const UsersPage = () => {
   };
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <h1 className="text-2xl font-bold mb-6 text-gray-800">Manage Users</h1>
+    <div className="p-6 bg-neutral-50 dark:bg-neutral-950 min-h-screen transition-colors duration-300">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-2xl font-bold mb-6 text-neutral-900 dark:text-neutral-50">
+          Manage Users
+        </h1>
 
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <table className="w-full text-left">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="p-4 font-semibold text-gray-700">Name</th>
-              <th className="p-4 font-semibold text-gray-700">Email</th>
-              <th className="p-4 font-semibold text-gray-700">Role</th>
-              <th className="p-4 font-semibold text-gray-700">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {users.map((user) => (
-              <tr key={user.id} className="hover:bg-gray-50">
-                <td className="p-4 text-gray-800">{user.name}</td>
-                <td className="p-4 text-gray-600">{user.email}</td>
-                <td className="p-4">
-                  <span
-                    className={`px-2 py-1 rounded text-xs font-semibold ${
-                      user.role === "admin"
-                        ? "bg-purple-100 text-purple-700"
-                        : user.role === "artist"
-                          ? "bg-yellow-100 text-yellow-700"
-                          : "bg-green-100 text-green-700"
-                    }`}
-                  >
-                    {user.role}
-                  </span>
-                </td>
-                <td className="p-4">
-                  <select
-                    value={user.role}
-                    onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                    className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none"
-                  >
-                    <option value="user">User</option>
-                    <option value="artist">Artist</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                </td>
+        <div className="bg-white dark:bg-neutral-900 rounded-2xl shadow-sm border border-neutral-200 dark:border-neutral-800 overflow-hidden">
+          <table className="w-full text-left">
+            <thead className="bg-neutral-50 dark:bg-neutral-950 border-b border-neutral-200 dark:border-neutral-800">
+              <tr>
+                <th className="p-4 font-semibold text-neutral-700 dark:text-neutral-300">
+                  Name
+                </th>
+                <th className="p-4 font-semibold text-neutral-700 dark:text-neutral-300">
+                  Email
+                </th>
+                <th className="p-4 font-semibold text-neutral-700 dark:text-neutral-300">
+                  Role
+                </th>
+                <th className="p-4 font-semibold text-neutral-700 dark:text-neutral-300">
+                  Actions
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
+              {users.map((user) => (
+                <tr
+                  key={user.id}
+                  className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors"
+                >
+                  <td className="p-4 text-neutral-900 dark:text-neutral-100 font-medium">
+                    {user.name}
+                  </td>
+                  <td className="p-4 text-neutral-600 dark:text-neutral-400">
+                    {user.email}
+                  </td>
+                  <td className="p-4">
+                    <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 capitalize">
+                      {user.role}
+                    </span>
+                  </td>
+                  <td className="p-4">
+                    <select
+                      value={user.role}
+                      onChange={(e) =>
+                        handleRoleChange(user.id, e.target.value)
+                      }
+                      className="bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg px-3 py-1.5 text-sm text-neutral-700 dark:text-neutral-300 focus:outline-none focus:ring-2 focus:ring-neutral-400"
+                    >
+                      <option value="user">User</option>
+                      <option value="artist">Artist</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

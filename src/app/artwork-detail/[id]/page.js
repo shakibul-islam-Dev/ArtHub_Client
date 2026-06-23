@@ -5,6 +5,18 @@ import { useRouter, useParams } from "next/navigation";
 import { getSingleArtPost } from "@/lib/actions/arthubdatabse";
 import Image from "next/image";
 import Link from "next/link";
+import {
+  Calendar,
+  MessageSquare,
+  Tag,
+  User,
+  Trash2,
+  Edit3,
+  ArrowLeft,
+  Loader2,
+  ShoppingBag,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const MOCK_COMMENTS = [
   {
@@ -86,7 +98,7 @@ export default function ArtworkDetail() {
 
     const newCommentObj = {
       _id: `c_${Date.now()}`,
-      username: "You (Logged In User)", // Marked as current user for editing/deletion
+      username: "You (Logged In User)",
       text: newComment,
       createdAt: new Date().toISOString(),
     };
@@ -132,20 +144,26 @@ export default function ArtworkDetail() {
 
   if (loading)
     return (
-      <div className="p-6 text-[#8be9fd] bg-[#282a36] min-h-screen flex flex-col gap-2 items-center justify-center font-semibold">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#44475a] border-t-[#bd93f9]" />
-        Loading artwork metrics...
+      <div className="min-h-[70vh] flex flex-col gap-3 items-center justify-center text-sm font-medium text-gray-500 dark:text-gray-400">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        <span>Loading artwork metrics...</span>
       </div>
     );
 
   if (error || !artwork)
     return (
-      <div className="p-6 text-[#ff5555] bg-[#282a36] min-h-screen flex flex-col gap-4 items-center justify-center">
-        <p className="text-xl font-bold">Artwork not found</p>
+      <div className="min-h-[70vh] flex flex-col gap-4 items-center justify-center px-4">
+        <div className="p-4 rounded-full bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400">
+          <Trash2 size={32} />
+        </div>
+        <p className="text-xl font-bold text-gray-900 dark:text-white">
+          Artwork not found
+        </p>
         <Link
           href="/"
-          className="px-4 py-2 bg-[#44475a] text-white text-sm rounded-lg hover:bg-[#6272a4] transition"
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-900 dark:hover:bg-gray-800 text-gray-900 dark:text-white text-sm font-semibold rounded-xl transition-all"
         >
+          <ArrowLeft size={16} />
           Back to Gallery
         </Link>
       </div>
@@ -165,191 +183,259 @@ export default function ArtworkDetail() {
   const isArtistOwner = user?.id === artistId;
 
   return (
-    <div className="min-h-screen bg-[#282a36] text-[#f8f8f2] p-6">
-      <div className="max-w-6xl mx-auto bg-[#1e1f29] rounded-xl overflow-hidden shadow-2xl border border-[#44475a]">
-        {/* Main Layout */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-6">
-          {/* Left: Image Card */}
-          <div className="relative w-full h-[450px] rounded-lg overflow-hidden bg-[#282a36] border border-[#44475a]">
-            <Image
-              src={artImage}
-              alt={artwork.title || "Artwork"}
-              fill
-              className="object-cover"
-              priority
-              unoptimized
+    <div className="min-h-screen bg-gray-50/50 dark:bg-gray-950 py-8 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
+      <div className="max-w-6xl mx-auto space-y-8">
+        {/* Back Button */}
+        <div>
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors group"
+          >
+            <ArrowLeft
+              size={16}
+              className="group-hover:-translate-x-1 transition-transform"
             />
-          </div>
+            Back to Hub
+          </Link>
+        </div>
 
-          {/* Right: Info Card */}
-          <div className="flex flex-col justify-between">
-            <div className="space-y-4">
-              <span className="px-3 py-1 bg-[#bd93f9] text-[#282a36] text-xs font-bold rounded-full tracking-wider uppercase">
-                {artwork.category || "Art"}
-              </span>
-              <h1 className="text-3xl font-bold text-[#8be9fd]">
-                {artwork.title || "Untitled"}
-              </h1>
-
-              <p className="text-sm text-[#6272a4]">
-                By:{" "}
-                <Link
-                  href={`/artists/${artistId}`}
-                  className="text-[#ff79c6] hover:underline font-medium"
-                >
-                  {artistName}
-                </Link>
-              </p>
-
-              <p className="text-[#f8f8f2] leading-relaxed bg-[#282a36] p-4 rounded-lg border border-[#44475a]">
-                {artwork.description ||
-                  "No description provided for this artwork."}
-              </p>
-
-              <div className="flex items-center justify-between pt-2 border-t border-[#44475a]">
-                <div>
-                  <p className="text-xs text-[#6272a4]">Price</p>
-                  <p className="text-2xl font-bold text-[#50fa7b]">
-                    ${(artwork.price || 0).toLocaleString()}
-                  </p>
-                </div>
-                {artwork.createdAt && (
-                  <div className="text-right">
-                    <p className="text-xs text-[#6272a4]">Uploaded On</p>
-                    <p className="text-sm">
-                      {new Date(artwork.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
-                )}
-              </div>
+        {/* Main Artwork Frame Card */}
+        <div className="bg-white dark:bg-gray-900/60 backdrop-blur-md rounded-2xl overflow-hidden shadow-xl border border-gray-100 dark:border-gray-800/80 transition-all duration-300">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-6 lg:p-8">
+            {/* Left Column: Image Canvas wrapper */}
+            <div className="relative w-full h-[350px] sm:h-[480px] lg:h-[540px] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-950 border border-gray-100 dark:border-gray-800 shadow-inner group aspect-square md:aspect-auto">
+              <Image
+                src={artImage}
+                alt={artwork.title || "Artwork"}
+                fill
+                sizes="(max-width: 768px) 100vw, 50vw"
+                className="object-cover group-hover:scale-[1.02] transition-transform duration-500"
+                priority
+              />
             </div>
 
-            {/* CTA Buttons */}
-            <div className="mt-8 pt-4 border-t border-[#44475a]">
-              {isArtistOwner ? (
-                <div className="flex gap-4">
-                  <button
-                    onClick={() => alert("Navigating to edit form...")}
-                    className="flex-1 py-3 bg-[#ffb86c] text-[#282a36] font-bold rounded-lg hover:bg-[#ffb86c]/90 transition"
-                  >
-                    Edit Artwork
-                  </button>
-                  <button
-                    onClick={handleDelete}
-                    className="flex-1 py-3 bg-[#ff5555] text-white font-bold rounded-lg hover:bg-[#ff5555]/90 transition"
-                  >
-                    Delete Artwork
-                  </button>
+            {/* Right Column: Dynamic Info Container */}
+            <div className="flex flex-col justify-between space-y-6">
+              <div className="space-y-4">
+                {/* Category Badge */}
+                <div className="flex items-center gap-1.5">
+                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 text-xs font-bold rounded-full tracking-wider uppercase border border-blue-100 dark:border-blue-900/30">
+                    <Tag size={12} />
+                    {artwork.category || "Art"}
+                  </span>
                 </div>
-              ) : (
-                <button
-                  onClick={handlePurchase}
-                  disabled={actionLoading}
-                  className="w-full py-4 bg-[#50fa7b] text-[#282a36] font-bold text-lg rounded-lg hover:bg-[#50fa7b]/90 transition disabled:opacity-50"
-                >
-                  {actionLoading ? "Processing..." : "Purchase Artwork"}
-                </button>
-              )}
+
+                {/* Title */}
+                <h1 className="text-3xl lg:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+                  {artwork.title || "Untitled"}
+                </h1>
+
+                {/* Artist Meta Link */}
+                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                  <div className="w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                    <User size={14} className="text-gray-500" />
+                  </div>
+                  <span>By:</span>
+                  <Link
+                    href={`/artists/${artistId}`}
+                    className="text-blue-600 dark:text-blue-400 font-bold hover:underline"
+                  >
+                    {artistName}
+                  </Link>
+                </div>
+
+                {/* Description Canvas */}
+                <div className="bg-gray-50/70 dark:bg-gray-950/40 p-4 rounded-xl border border-gray-100 dark:border-gray-800/80 mt-2">
+                  <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 leading-relaxed">
+                    {artwork.description ||
+                      "No description provided for this artwork."}
+                  </p>
+                </div>
+
+                {/* Pricing & Metric Rows */}
+                <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-800/60">
+                  <div>
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                      Valued At
+                    </p>
+                    <p className="text-3xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
+                      ${(artwork.price || 0).toLocaleString()}
+                    </p>
+                  </div>
+                  {artwork.createdAt && (
+                    <div className="text-right flex flex-col items-end">
+                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-1">
+                        <Calendar size={12} /> Created
+                      </p>
+                      <p className="text-sm font-medium text-gray-800 dark:text-gray-200 mt-1">
+                        {new Date(artwork.createdAt).toLocaleDateString(
+                          "en-US",
+                          {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          },
+                        )}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Call To Actions */}
+              <div className="pt-4 border-t border-gray-100 dark:border-gray-800/60">
+                {isArtistOwner ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button
+                      onClick={() => alert("Navigating to edit form...")}
+                      className="h-12 bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500 text-white font-bold rounded-xl transition-all shadow-md active:scale-[0.99]"
+                    >
+                      <Edit3 size={16} className="mr-2" />
+                      Edit Post
+                    </Button>
+                    <Button
+                      onClick={handleDelete}
+                      variant="destructive"
+                      className="h-12 font-bold rounded-xl transition-all shadow-md active:scale-[0.99]"
+                    >
+                      <Trash2 size={16} className="mr-2" />
+                      Delete
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    onClick={handlePurchase}
+                    disabled={actionLoading}
+                    className="w-full h-12 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-bold text-base rounded-xl transition-all shadow-lg shadow-blue-500/10 active:scale-[0.99] disabled:opacity-50"
+                  >
+                    <ShoppingBag size={18} className="mr-2" />
+                    {actionLoading
+                      ? "Processing order..."
+                      : "Purchase Masterpiece"}
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Comments Section */}
-        <div className="border-t border-[#44475a] p-6 bg-[#282a36]/50">
-          <h2 className="text-xl font-bold text-[#8be9fd] mb-4">Discussion</h2>
+        {/* Discussion Center Area */}
+        <div className="bg-white dark:bg-gray-900/60 backdrop-blur-md rounded-2xl border border-gray-100 dark:border-gray-800/80 shadow-lg p-6 lg:p-8">
+          <div className="flex items-center gap-2 mb-6">
+            <MessageSquare
+              size={20}
+              className="text-blue-600 dark:text-blue-400"
+            />
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">
+              Community Discussion
+            </h2>
+          </div>
 
-          {/* Comment Creation Form */}
-          <form onSubmit={handleCommentSubmit} className="mb-6 space-y-3">
+          {/* New Comment Submission Block */}
+          <form onSubmit={handleCommentSubmit} className="mb-8 space-y-3">
             <textarea
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
-              placeholder="Share your thoughts about this artwork..."
+              placeholder="Share your thoughts or ask a question about this artwork..."
               rows={3}
-              className="w-full p-3 bg-[#282a36] border border-[#44475a] rounded-lg focus:outline-none focus:border-[#bd93f9] text-[#f8f8f2] placeholder-[#6272a4]"
+              className="w-full p-3.5 bg-gray-50/50 dark:bg-gray-950/50 border border-gray-200 dark:border-gray-800 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:focus:ring-blue-500/5 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-all resize-none"
               required
             />
-            <button
-              type="submit"
-              className="px-5 py-2 bg-[#bd93f9] text-[#282a36] font-bold rounded-lg hover:bg-[#bd93f9]/90 transition"
-            >
-              Post Comment
-            </button>
+            <div className="flex justify-end">
+              <Button
+                type="submit"
+                className="bg-gray-900 hover:bg-gray-800 dark:bg-gray-100 dark:hover:bg-white text-white dark:text-gray-900 font-semibold rounded-xl px-5 transition-all shadow-sm"
+              >
+                Comment
+              </Button>
+            </div>
           </form>
 
-          {/* Comments Feed */}
-          <div className="space-y-3 max-h-80 overflow-y-auto pr-2">
-            {comments.map((comment) => {
-              // Permit editing/deleting mock items explicitly tagged as current user
-              const isCommentOwner =
-                comment.username === "You (Logged In User)";
-              const isEditing = editingCommentId === comment._id;
+          {/* Real-time Comments Stream */}
+          <div className="space-y-4 max-h-96 overflow-y-auto pr-1">
+            {comments.length === 0 ? (
+              <p className="text-center py-6 text-sm text-gray-400 dark:text-gray-500">
+                No comments posted yet.
+              </p>
+            ) : (
+              comments.map((comment) => {
+                const isCommentOwner =
+                  comment.username === "You (Logged In User)";
+                const isEditing = editingCommentId === comment._id;
 
-              return (
-                <div
-                  key={comment._id}
-                  className="p-4 bg-[#1e1f29] rounded-lg border border-[#44475a] flex flex-col justify-between space-y-2"
-                >
-                  <div className="flex justify-between items-center">
-                    <span className="font-semibold text-sm text-[#ff79c6]">
-                      {comment.username}
-                    </span>
-                    <span className="text-xs text-[#6272a4]">
-                      {new Date(comment.createdAt).toLocaleDateString()}
-                    </span>
-                  </div>
-
-                  {isEditing ? (
-                    /* Edit Mode Input Layout */
-                    <div className="space-y-2 mt-1">
-                      <textarea
-                        value={editingText}
-                        onChange={(e) => setEditingText(e.target.value)}
-                        className="w-full p-2 bg-[#282a36] border border-[#bd93f9] rounded text-sm text-[#f8f8f2] focus:outline-none"
-                        rows={2}
-                      />
-                      <div className="flex space-x-2 text-xs">
-                        <button
-                          onClick={() => handleEditSubmit(comment._id)}
-                          className="px-3 py-1 bg-[#50fa7b] text-[#282a36] font-bold rounded hover:bg-[#50fa7b]/90"
-                        >
-                          Save
-                        </button>
-                        <button
-                          onClick={() => setEditingCommentId(null)}
-                          className="px-3 py-1 bg-[#44475a] text-white rounded hover:bg-[#6272a4]"
-                        >
-                          Cancel
-                        </button>
-                      </div>
+                return (
+                  <div
+                    key={comment._id}
+                    className="p-4 bg-gray-50/60 dark:bg-gray-950/40 rounded-xl border border-gray-100 dark:border-gray-800/80 space-y-2.5 transition-all"
+                  >
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-xs sm:text-sm text-gray-900 dark:text-gray-200">
+                        {comment.username}
+                      </span>
+                      <span className="text-[11px] text-gray-400 dark:text-gray-500 font-medium">
+                        {new Date(comment.createdAt).toLocaleDateString(
+                          "en-US",
+                          {
+                            month: "short",
+                            day: "numeric",
+                          },
+                        )}
+                      </span>
                     </div>
-                  ) : (
-                    /* Normal Mode Text & Actions Layout */
-                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
-                      <p className="text-sm text-[#f8f8f2] flex-1 break-words">
-                        {comment.text}
-                      </p>
 
-                      {isCommentOwner && (
-                        <div className="flex space-x-3 text-xs font-semibold shrink-0 pt-1 sm:pt-0">
+                    {isEditing ? (
+                      <div className="space-y-2 mt-1">
+                        <textarea
+                          value={editingText}
+                          onChange={(e) => setEditingText(e.target.value)}
+                          className="w-full p-2.5 bg-white dark:bg-gray-950 border border-blue-500 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-500/10"
+                          rows={2}
+                        />
+                        <div className="flex space-x-2 text-xs">
                           <button
-                            onClick={() => startEditing(comment)}
-                            className="text-[#ffb86c] hover:underline"
+                            onClick={() => handleEditSubmit(comment._id)}
+                            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-md shadow-sm transition"
                           >
-                            Edit
+                            Save Change
                           </button>
                           <button
-                            onClick={() => handleCommentDelete(comment._id)}
-                            className="text-[#ff5555] hover:underline"
+                            onClick={() => setEditingCommentId(null)}
+                            className="px-3 py-1.5 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-md transition"
                           >
-                            Delete
+                            Cancel
                           </button>
                         </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                      </div>
+                    ) : (
+                      <div className="flex items-start justify-between gap-4">
+                        <p className="text-sm text-gray-600 dark:text-gray-300 flex-1 break-words leading-relaxed">
+                          {comment.text}
+                        </p>
+
+                        {isCommentOwner && (
+                          <div className="flex items-center space-x-2.5 shrink-0 pt-0.5">
+                            <button
+                              onClick={() => startEditing(comment)}
+                              className="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors p-1"
+                              title="Edit comment"
+                            >
+                              <Edit3 size={14} />
+                            </button>
+                            <button
+                              onClick={() => handleCommentDelete(comment._id)}
+                              className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                              title="Delete comment"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
       </div>

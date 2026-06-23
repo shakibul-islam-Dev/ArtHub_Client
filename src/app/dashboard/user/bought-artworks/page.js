@@ -1,7 +1,10 @@
+"use client";
+
 import React from "react";
+import Image from "next/image";
+import Link from "next/link";
 
 const BoughtArtworksPage = () => {
-  // Mock Data for Purchased Artworks
   const boughtArtworks = [
     {
       id: "art-001",
@@ -46,23 +49,23 @@ const BoughtArtworksPage = () => {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
+    <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-8 min-h-screen transition-colors duration-300">
       {/* Page Header */}
-      <div className="border-b border-gray-100 dark:border-gray-800 pb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="border-b border-neutral-200 dark:border-neutral-800 pb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-3xl">
+          <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-50 sm:text-3xl">
             Bought Artworks
           </h1>
-          <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400">
+          <p className="mt-1.5 text-sm text-neutral-500 dark:text-neutral-400">
             Browse through and manage your personal collection of purchased
             masterpieces.
           </p>
         </div>
-        <div className="inline-flex items-center gap-2 bg-indigo-50/60 dark:bg-indigo-950/30 px-3 py-1.5 rounded-xl border border-indigo-100/50 dark:border-indigo-900/30">
-          <span className="text-xs font-semibold text-indigo-700 dark:text-indigo-400">
+        <div className="inline-flex items-center gap-2 bg-neutral-100 dark:bg-neutral-800 px-3 py-1.5 rounded-xl border border-neutral-200 dark:border-neutral-700 self-start sm:self-auto">
+          <span className="text-xs font-semibold text-neutral-600 dark:text-neutral-300">
             Total Collection:
           </span>
-          <span className="text-sm font-bold text-indigo-900 dark:text-indigo-300">
+          <span className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
             {boughtArtworks.length} Items
           </span>
         </div>
@@ -70,8 +73,8 @@ const BoughtArtworksPage = () => {
 
       {/* Gallery Grid */}
       {boughtArtworks.length === 0 ? (
-        <div className="text-center py-16 bg-gray-50 dark:bg-gray-900/40 rounded-2xl border border-dashed border-gray-200 dark:border-gray-800">
-          <p className="text-gray-500 dark:text-gray-400 font-medium">
+        <div className="text-center py-16 bg-neutral-50 dark:bg-neutral-900/50 rounded-2xl border border-dashed border-neutral-300 dark:border-neutral-700">
+          <p className="text-neutral-500 dark:text-neutral-400 font-medium">
             No artworks purchased yet.
           </p>
         </div>
@@ -80,17 +83,19 @@ const BoughtArtworksPage = () => {
           {boughtArtworks.map((art) => (
             <div
               key={art.id}
-              className="group flex flex-col bg-white dark:bg-gray-800 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-700/70 shadow-sm hover:shadow-md transition-all duration-200"
+              className="group flex flex-col bg-white dark:bg-neutral-950 rounded-2xl overflow-hidden border border-neutral-200 dark:border-neutral-800 shadow-sm hover:shadow-md transition-all duration-300"
             >
               {/* Image Frame */}
-              <div className="relative aspect-[4/3] w-full overflow-hidden bg-gray-100 dark:bg-gray-900">
-                <img
+              <div className="relative aspect-[4/3] w-full overflow-hidden bg-neutral-100 dark:bg-neutral-900">
+                <Image
                   src={art.image}
                   alt={art.title}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  loading="lazy"
+                  fill
+                  sizes="(max-w-7xl) 25vw, (max-w-md) 50vw, 100vw"
+                  className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  priority={false}
                 />
-                <span className="absolute top-3 right-3 px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase bg-black/60 text-white backdrop-blur-sm rounded-md">
+                <span className="absolute top-3 right-3 px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase bg-neutral-900/70 text-white backdrop-blur-sm rounded-md z-10">
                   {art.category}
                 </span>
               </div>
@@ -98,33 +103,33 @@ const BoughtArtworksPage = () => {
               {/* Artwork Content */}
               <div className="p-4 flex flex-col flex-grow justify-between space-y-4">
                 <div>
-                  <h3 className="font-semibold text-gray-950 dark:text-white text-base line-clamp-1 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                  <h3 className="font-semibold text-neutral-950 dark:text-neutral-100 text-base line-clamp-1 group-hover:underline transition-all">
                     {art.title}
                   </h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
                     By{" "}
-                    <span className="font-medium text-gray-700 dark:text-gray-300">
+                    <span className="font-medium text-neutral-700 dark:text-neutral-300">
                       {art.artist}
                     </span>
                   </p>
                 </div>
 
                 {/* Meta details & Action */}
-                <div className="pt-3 border-t border-gray-100 dark:border-gray-700/60 flex items-center justify-between">
+                <div className="pt-3 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between">
                   <div>
-                    <p className="text-[10px] uppercase font-semibold text-gray-400 tracking-wider">
+                    <p className="text-[10px] uppercase font-semibold text-neutral-400 dark:text-neutral-500 tracking-wider">
                       Purchased
                     </p>
-                    <p className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                    <p className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
                       {art.purchaseDate}
                     </p>
                   </div>
-                  <a
+                  <Link
                     href={`/dashboard/artworks/${art.id}`}
-                    className="inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-950 rounded-xl transition-all duration-150"
+                    className="inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium text-neutral-900 dark:text-neutral-100 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-xl transition-all duration-150"
                   >
                     View Details
-                  </a>
+                  </Link>
                 </div>
               </div>
             </div>

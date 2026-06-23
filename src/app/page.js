@@ -5,7 +5,7 @@ import ArtCategories from "@/components/artcategories/ArtCategories";
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-between p-24">
+    <div className="">
       {/*Heroscecion */}
       <HeroSection>{/* Discover & Buy Original Art */}</HeroSection>
       {/* Feature Art Works */}

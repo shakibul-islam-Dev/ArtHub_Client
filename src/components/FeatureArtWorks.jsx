@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, Eye } from "lucide-react";
 import { getArtPost } from "@/lib/actions/arthubdatabse";
@@ -31,25 +31,21 @@ export default function FeatureArtWorks() {
   }, []);
 
   return (
-    <section className="w-full py-20 bg-[#0b0c10] text-white relative overflow-hidden">
-      {/* Background Gradients */}
-      <div className="absolute top-[20%] right-[-10%] w-[400px] h-[400px] bg-purple-900/10 rounded-full blur-[100px] pointer-events-none" />
-      <div className="absolute bottom-[20%] left-[-10%] w-[400px] h-[400px] bg-cyan-900/10 rounded-full blur-[100px] pointer-events-none" />
-
+    <section className="w-full py-20 bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-300 relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
           <div>
-            <span className="text-sm font-semibold tracking-wider uppercase text-cyan-400 block mb-2">
+            <span className="text-sm font-semibold tracking-wider uppercase text-blue-600 dark:text-blue-400 block mb-2">
               Curated Collection
             </span>
-            <h2 className="text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white via-gray-200 to-purple-300">
+            <h2 className="text-3xl md:text-5xl font-extrabold text-gray-900 dark:text-white tracking-tight">
               Featured Artworks
             </h2>
           </div>
           <Link
             href="/browse-artworks"
-            className="inline-flex items-center gap-2 text-sm font-medium text-purple-400 hover:text-purple-300 group transition-colors"
+            className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 group transition-colors"
           >
             View Full Gallery
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -62,11 +58,11 @@ export default function FeatureArtWorks() {
             {[...Array(6)].map((_, i) => (
               <div
                 key={i}
-                className="bg-gray-900/40 border border-gray-800 rounded-2xl p-4 animate-pulse"
+                className="bg-gray-100/70 dark:bg-gray-900/40 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 animate-pulse"
               >
-                <div className="w-full aspect-[4/3] bg-gray-800 rounded-xl mb-4" />
-                <div className="h-5 bg-gray-800 rounded w-2/3 mb-2" />
-                <div className="h-4 bg-gray-800 rounded w-1/3" />
+                <div className="w-full aspect-[4/3] bg-gray-200 dark:bg-gray-800 rounded-xl mb-4" />
+                <div className="h-5 bg-gray-200 dark:bg-gray-800 rounded w-2/3 mb-2" />
+                <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-1/3" />
               </div>
             ))}
           </div>
@@ -78,28 +74,28 @@ export default function FeatureArtWorks() {
               return (
                 <motion.div
                   key={art.id || index}
-                  initial={{ opacity: 0, y: 30 }}
+                  initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="group bg-gray-900/30 border border-gray-800/80 hover:border-purple-500/30 rounded-2xl overflow-hidden backdrop-blur-sm transition-all duration-300 flex flex-col"
+                  transition={{ duration: 0.4, delay: index * 0.05 }}
+                  className="group bg-white dark:bg-gray-900/30 border border-gray-200 dark:border-gray-800/80 hover:border-blue-500 dark:hover:border-blue-500/50 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col"
                 >
                   {/* Image Wrapper */}
-                  <div className="relative w-full aspect-[4/3] overflow-hidden bg-gray-950">
+                  <div className="relative w-full aspect-[4/3] overflow-hidden bg-gray-100 dark:bg-gray-950">
                     {artImage && (
                       <Image
                         src={artImage}
                         alt={art.title || "Artwork"}
                         fill
                         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                        className="object-cover group-hover:scale-103 transition-transform duration-500"
                         priority={index < 3}
                       />
                     )}
                     {/* Hover Overlay */}
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center z-10">
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center z-10">
                       <Link
                         href={`/artwork/${art.id}`}
-                        className="p-3 bg-white/10 backdrop-blur-md border border-white/20 rounded-full text-white hover:bg-white hover:text-black transition-all"
+                        className="p-3 bg-white/20 backdrop-blur-md border border-white/30 rounded-full text-white hover:bg-white hover:text-black transition-all shadow-sm"
                       >
                         <Eye className="w-5 h-5" />
                       </Link>
@@ -108,21 +104,21 @@ export default function FeatureArtWorks() {
 
                   {/* Info Content */}
                   <div className="p-5 flex flex-col flex-grow">
-                    <span className="text-xs font-medium text-cyan-400 mb-1.5 uppercase tracking-wider">
+                    <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 mb-1.5 uppercase tracking-wider">
                       {art.category || "Digital Art"}
                     </span>
-                    <h3 className="text-xl font-bold text-gray-100 mb-2 line-clamp-1 group-hover:text-purple-300 transition-colors">
+                    <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2 line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                       {art.title || "Untitled Masterpiece"}
                     </h3>
-                    <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-800/60">
-                      <p className="text-xs text-gray-500">
+                    <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-100 dark:border-gray-800/60">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
                         By{" "}
-                        <span className="text-gray-400 font-medium">
+                        <span className="text-gray-700 dark:text-gray-300 font-medium">
                           {art.artist || "Unknown Artist"}
                         </span>
                       </p>
                       {art.price && (
-                        <span className="text-sm font-semibold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                        <span className="text-sm font-bold text-gray-900 dark:text-white">
                           ${art.price}
                         </span>
                       )}

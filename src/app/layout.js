@@ -30,7 +30,7 @@ export default function RootLayout({ children }) {
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="h-full flex flex-col">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -40,7 +40,7 @@ export default function RootLayout({ children }) {
           <NavigationBar></NavigationBar>
           <Spinner isLoading={isGlobalLoading} message="Mixing colors..." />
           <ToastContainer />
-          {children}
+          <main className="flex-1 w-full">{children}</main>
           <Footer></Footer>
         </ThemeProvider>
       </body>

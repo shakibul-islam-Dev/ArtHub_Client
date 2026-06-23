@@ -8,7 +8,7 @@ import {
   Menu,
   X,
   Home,
-  Image as ImageIcon, // Fixed duplicate import identifier collision
+  Image as ImageIcon,
   History,
   CreditCard,
   User,
@@ -87,7 +87,7 @@ export default function DashboardSideBar({ session }) {
       },
       {
         label: "Edit arts",
-        href: "/dashboard/artist/artworks",
+        href: "/dashboard/artist/edit-artworks",
         icon: ImageIcon,
       },
       {
@@ -116,31 +116,39 @@ export default function DashboardSideBar({ session }) {
 
   const serializableNavItems = mobileNavLabels[role] || mobileNavLabels["user"];
 
+  const checkActiveState = (itemHref) => {
+    if (itemHref === "/dashboard/artist/artworks/id") {
+      return (
+        pathname.startsWith("/dashboard/artist/artworks/") &&
+        pathname !== "/dashboard/artist/artworks"
+      );
+    }
+    return pathname === itemHref;
+  };
+
   return (
     <>
       {/* ================= DESKTOP SIDEBAR ================= */}
-      <aside className="hidden md:flex flex-col w-64 shrink-0 border-r border-slate-200 p-4 h-screen sticky top-0 bg-white select-none justify-between">
+      <aside className="hidden md:flex flex-col w-64 shrink-0 border-r border-border p-4 h-screen sticky top-0 bg-background text-foreground transition-colors duration-300 select-none justify-between">
         <div className="flex flex-col gap-4 overflow-y-auto no-scrollbar">
           {/* User Profile Info Header */}
-          <div className="flex items-center gap-3 p-2 border-b border-slate-100 pb-4">
+          <div className="flex items-center gap-3 p-2 border-b border-border/50 pb-4">
             {userImage ? (
               <Image
                 src={userImage}
                 alt={userName}
                 width={40}
                 height={40}
-                className="w-10 h-10 rounded-full object-cover ring-2 ring-slate-100"
+                className="w-10 h-10 rounded-full object-cover ring-2 ring-border"
               />
             ) : (
-              <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-600 uppercase">
+              <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center font-bold text-muted-foreground uppercase">
                 {userName.charAt(0)}
               </div>
             )}
             <div className="flex flex-col min-w-0">
-              <span className="text-sm font-semibold text-slate-800 truncate">
-                {userName}
-              </span>
-              <span className="text-xs text-slate-500 truncate capitalize">
+              <span className="text-sm font-semibold truncate">{userName}</span>
+              <span className="text-xs opacity-70 truncate capitalize">
                 {role} Account
               </span>
             </div>
@@ -149,7 +157,7 @@ export default function DashboardSideBar({ session }) {
           {/* Desktop Links Navigation */}
           <nav className="flex flex-col gap-2">
             {serializableNavItems.map((item, index) => {
-              const isActive = pathname === item.href;
+              const isActive = checkActiveState(item.href);
               const Icon = item.icon;
               return (
                 <Link
@@ -157,13 +165,17 @@ export default function DashboardSideBar({ session }) {
                   href={item.href}
                   className={`p-3 rounded-lg text-sm font-medium transition-colors flex items-center gap-3 ${
                     isActive
-                      ? "bg-slate-100 text-slate-900 font-semibold"
-                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                      ? "bg-accent text-accent-foreground font-semibold"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   }`}
                 >
                   <Icon
                     size={18}
-                    className={isActive ? "text-slate-900" : "text-slate-500"}
+                    className={
+                      isActive
+                        ? "text-accent-foreground"
+                        : "text-muted-foreground"
+                    }
                   />
                   {item.label}
                 </Link>
@@ -173,10 +185,10 @@ export default function DashboardSideBar({ session }) {
         </div>
 
         {/* Bottom Desktop Logout Wrapper */}
-        <div className="pt-4 border-t border-slate-100">
+        <div className="pt-4 border-t border-border/50">
           <button
             onClick={handleLogout}
-            className="w-full p-3 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors flex items-center gap-3"
+            className="w-full p-3 rounded-lg text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors flex items-center gap-3"
           >
             <LogOut size={18} />
             Logout
@@ -185,26 +197,24 @@ export default function DashboardSideBar({ session }) {
       </aside>
 
       {/* ================= MOBILE HEADER TOP BAR ================= */}
-      <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 flex items-center justify-between z-40">
-        <h2 className="text-md font-bold capitalize text-slate-800">
-          {role} Dashboard
-        </h2>
+      <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-background/90 backdrop-blur-md border-b border-border px-4 flex items-center justify-between z-40 transition-colors duration-300">
+        <h2 className="text-md font-bold capitalize">{role} Dashboard</h2>
 
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="p-2 text-slate-600 hover:text-slate-900 focus:outline-none rounded-md hover:bg-slate-50"
+          className="p-2 text-muted-foreground hover:text-foreground focus:outline-none rounded-md hover:bg-muted"
           aria-label="Toggle Menu"
         >
           {isOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
       </div>
 
-      {/* Adding visual spacer context so top items don't hide under fixed header overlay */}
+      {/* Spacing for mobile fixed header */}
       <div className="w-full h-16 md:hidden block shrink-0" />
 
       {/* ================= MOBILE DRAWER BACKDROP OVERLAY ================= */}
       <div
-        className={`fixed inset-0 bg-black/40 z-40 md:hidden transition-opacity duration-300 ${
+        className={`fixed inset-0 bg-background/80 backdrop-blur-sm z-40 md:hidden transition-opacity duration-300 ${
           isOpen
             ? "opacity-100 pointer-events-auto"
             : "opacity-0 pointer-events-none"
@@ -214,13 +224,13 @@ export default function DashboardSideBar({ session }) {
 
       {/* ================= MOBILE SLIDING SIDEBAR DRAWER ================= */}
       <div
-        className={`fixed inset-y-0 left-0 w-64 bg-white z-50 p-6 shadow-xl flex flex-col md:hidden transition-transform duration-300 ease-in-out justify-between ${
+        className={`fixed inset-y-0 left-0 w-64 bg-background text-foreground z-50 p-6 shadow-xl flex flex-col md:hidden transition-transform duration-300 ease-in-out justify-between ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="flex flex-col gap-4 overflow-y-auto no-scrollbar">
-          <div className="flex justify-between items-center pb-4 border-b border-slate-100">
-            {/* Mobile User Metadata   */}
+          <div className="flex justify-between items-center pb-4 border-b border-border/50">
+            {/* Mobile User Metadata */}
             <div className="flex items-center gap-3">
               {userImage ? (
                 <Image
@@ -228,25 +238,23 @@ export default function DashboardSideBar({ session }) {
                   alt={userName}
                   width={36}
                   height={36}
-                  className="w-9 h-9 rounded-full object-cover"
+                  className="w-9 h-9 rounded-full object-cover ring-1 ring-border"
                 />
               ) : (
-                <div className="w-9 h-9 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-600 uppercase text-sm">
+                <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center font-bold text-muted-foreground uppercase text-sm">
                   {userName.charAt(0)}
                 </div>
               )}
               <div className="flex flex-col min-w-0">
-                <span className="text-sm font-semibold text-slate-800 truncate">
+                <span className="text-sm font-semibold truncate">
                   {userName}
                 </span>
-                <span className="text-xs text-slate-500 capitalize">
-                  {role}
-                </span>
+                <span className="text-xs opacity-70 capitalize">{role}</span>
               </div>
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="text-slate-500 p-1 hover:bg-slate-50 rounded-md"
+              className="text-muted-foreground p-1 hover:bg-muted rounded-md transition-colors"
             >
               <X size={20} />
             </button>
@@ -255,7 +263,7 @@ export default function DashboardSideBar({ session }) {
           {/* Mobile Drawer Menu Links */}
           <nav className="flex flex-col gap-2">
             {serializableNavItems.map((item, index) => {
-              const isActive = pathname === item.href;
+              const isActive = checkActiveState(item.href);
               const Icon = item.icon;
               return (
                 <Link
@@ -263,13 +271,17 @@ export default function DashboardSideBar({ session }) {
                   href={item.href}
                   className={`p-3 rounded-lg text-sm font-medium transition-colors flex items-center gap-3 ${
                     isActive
-                      ? "bg-slate-100 text-slate-900 font-semibold"
-                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                      ? "bg-accent text-accent-foreground font-semibold"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   }`}
                 >
                   <Icon
                     size={18}
-                    className={isActive ? "text-slate-900" : "text-slate-500"}
+                    className={
+                      isActive
+                        ? "text-accent-foreground"
+                        : "text-muted-foreground"
+                    }
                   />
                   {item.label}
                 </Link>
@@ -279,10 +291,10 @@ export default function DashboardSideBar({ session }) {
         </div>
 
         {/* Mobile App Bottom Logout Wrapper Area */}
-        <div className="pt-4 border-t border-slate-100">
+        <div className="pt-4 border-t border-border/50">
           <button
             onClick={handleLogout}
-            className="w-full p-3 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors flex items-center gap-3"
+            className="w-full p-3 rounded-lg text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors flex items-center gap-3"
           >
             <LogOut size={18} />
             Logout
