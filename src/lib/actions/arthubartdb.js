@@ -1,10 +1,19 @@
 "use server";
+import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
-import { auth } from "@/lib/auth";
-
 const baseUrl = process.env.NEXT_PUBLIC_URL;
+//Art new create er jonno
+export const createNewArt = async (newArtData) => {
+  const res = await fetch(`${baseUrl}/api/artHub/artwork`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(newArtData),
+  });
+  return res.json();
+};
 
-// ১. সব আর্টওয়ার্ক গেট করার ফাংশন
 export async function getArtPost() {
   try {
     const res = await fetch(`${baseUrl}/api/artHub/artwork`, {
@@ -41,70 +50,6 @@ export async function getSingleArtPost(id) {
   }
 }
 
-// ============== POST REQUESTS ===============
-
-// ৩. নতুন আর্টওয়ার্ক তৈরি করার ফাংশন
-export async function createArtPost(data) {
-  try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session || !session.user) {
-      return {
-        success: false,
-        message: "Unauthorized access! Please login first.",
-      };
-    }
-
-    // ফ্রন্টএন্ড ফর্ম থেকে পাঠানো artist_id অথবা সেশনের আইডি ব্যাকএন্ডে পাস করা হচ্ছে
-    const payload = {
-      ...data,
-      artist_id: data.artist_id || session.user.id || session.user._id,
-      user: {
-        id: session.user.id,
-        name: session.user.name,
-        email: session.user.email,
-        role: session.user.role || "artist",
-      },
-    };
-
-    const res = await fetch(`${baseUrl}/api/artHub/artwork`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => ({}));
-      return {
-        success: false,
-        message: errorData.message || "Failed to create new artwork",
-      };
-    }
-
-    const resData = await res.json();
-
-    return {
-      success: true,
-      message: resData.message || "Artwork successfully saved!",
-      insertedId: resData.insertedId || resData.id || null,
-      data: resData.data || resData,
-    };
-  } catch (err) {
-    console.log("Server Action Error:", err);
-    return {
-      success: false,
-      message: "Server Connection Failed",
-    };
-  }
-}
-
-// ============== PUT (UPDATE) REQUESTS ===============
-
-// ৪. আর্টওয়ার্ক আপডেট করার ফাংশন
 export async function updateArtPost(id, data) {
   try {
     if (!id) return { success: false, message: "Artwork ID is required" };
@@ -170,6 +115,7 @@ export async function deleteArtPost(id) {
   try {
     if (!id) return { success: false, message: "Artwork ID is required" };
 
+    // ১. headers এবং auth ইমপোর্ট না থাকায় এখানে এরর আসছিল
     const session = await auth.api.getSession({
       headers: await headers(),
     });
@@ -181,6 +127,7 @@ export async function deleteArtPost(id) {
       };
     }
 
+    // ২. ডিলিট রিকোয়েস্ট পাঠানো হচ্ছে
     const res = await fetch(`${baseUrl}/api/artHub/artwork/${id}`, {
       method: "DELETE",
     });
@@ -194,6 +141,10 @@ export async function deleteArtPost(id) {
     }
 
     const resData = await res.json();
+
+    // ৩. ডিলিট সফল হলে Next.js এর ক্যাশ রিসেট করা হচ্ছে যেন UI-তে সাথে সাথে আপডেট হয়
+    revalidatePath("/dashboard/artist/artworks");
+
     return {
       success: true,
       message: resData.message || "Artwork deleted successfully!",
@@ -204,5 +155,23 @@ export async function deleteArtPost(id) {
       success: false,
       message: "Server Connection Failed",
     };
+  }
+}
+
+// উদাহরণ: src/app/api/artHub/artwork/[id]/route.js
+import { NextResponse } from "next/server";
+
+export async function DELETE(request, { params }) {
+  try {
+    const { id } = await params; // Next.js 15+ এ এটিawait করতে হয়
+
+    // এখানে আপনার আসল ডাটাবেজ ডিলিট কুয়েরি লিখবেন, যেমন:
+    // await db.artwork.delete(id);
+
+    return NextResponse.json({
+      message: "Deleted successfully from Database!",
+    });
+  } catch (error) {
+    return NextResponse.json({ message: "DB Error" }, { status: 500 });
   }
 }

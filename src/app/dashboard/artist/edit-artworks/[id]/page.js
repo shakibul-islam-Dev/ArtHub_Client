@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Loader2, ArrowLeft, Save } from "lucide-react";
 import Link from "next/link";
-import { getSingleArtPost, updateArtPost } from "@/lib/actions/arthubdatabse";
+import toast from "react-hot-toast";
 
 const EditArtworkPage = () => {
   const router = useRouter();
@@ -15,8 +15,8 @@ const EditArtworkPage = () => {
 
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [originalData, setOriginalData] = useState(null);
 
-  // useForm হুক ইনিশিয়ালাইজেশন
   const {
     register,
     handleSubmit,
@@ -33,60 +33,100 @@ const EditArtworkPage = () => {
     },
   });
 
-  // পেইজ লোড হলে পুরাতন ডেটা ফেচ করে setValue দিয়ে ফর্মে বসানো
+  // ১. পুরাতন ডেটা ফেচ করা
   useEffect(() => {
     if (!id) return;
+
+    let isMounted = true;
 
     const fetchArtworkDetails = async () => {
       try {
         setLoading(true);
-        const data = await getSingleArtPost(id);
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_URL}/api/artHub/artwork/${id}`,
+          {
+            cache: "no-store",
+          },
+        );
 
-        if (data) {
-          // রিয়্যাক্ট হুক ফর্মের ফিল্ডগুলোতে ডেটা সেট করা হচ্ছে
-          setValue("title", data.title || "");
-          setValue("description", data.description || "");
-          setValue("price", data.price || "");
-          setValue("category", data.category || "");
-          setValue("image_url", data.image_url || "");
-          setValue("artist_profile_url", data.artist_profile_url || "");
+        if (!res.ok) throw new Error("Failed to fetch data");
+
+        const data = await res.json();
+
+        if (!isMounted) return;
+
+        const finalData = data?.data || data;
+
+        if (finalData) {
+          setOriginalData(finalData); // অরিজিনাল ডাটা ব্যাকআপ রাখা হলো
+          setValue("title", finalData.title || "");
+          setValue("description", finalData.description || "");
+          setValue("price", finalData.price || "");
+          setValue("category", finalData.category || "");
+          setValue("image_url", finalData.image_url || "");
+          setValue("artist_profile_url", finalData.artist_profile_url || "");
         } else {
-          alert("আর্টওয়ার্কের ডেটা খুঁজে পাওয়া যায়নি!");
-          router.push("/dashboard/artist/manage-artworks");
+          toast.error("Artwork data not found!");
+          router.replace("/dashboard/artist/artworks");
         }
       } catch (error) {
         console.error("Error loading artwork:", error);
+        toast.error("Failed to load artwork details!");
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
 
     fetchArtworkDetails();
+
+    return () => {
+      isMounted = false;
+    };
   }, [id, setValue, router]);
 
-  // সাবমিট হ্যান্ডলার
-  const onFormSubmit = async (data) => {
+  // ২. সাবমিট হ্যান্ডলার
+  const onFormSubmit = async (formData) => {
     try {
       setUpdating(true);
 
-      // প্রাইসকে নাম্বার টাইপে কনভার্ট করা
+      // ব্যাকএন্ডে পাঠানোর জন্য কমপ্লিট পেলোড স্ট্রাকচার তৈরি
       const payload = {
-        ...data,
-        price: Number(data.price),
+        ...originalData, // আগের মেটাডাটা (যেমন: artist_id, artist_name, date_uploaded) ঠিক রাখা হলো
+        title: formData.title,
+        description: formData.description,
+        price: Number(formData.price),
+        category: formData.category,
+        image_url: formData.image_url,
+        artist_profile_url: formData.artist_profile_url,
       };
 
-      const response = await updateArtPost(id, payload);
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_URL}/api/artHub/artwork/${id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        },
+      );
 
-      if (response.success) {
-        alert(response.message || "আর্টওয়ার্ক সফলভাবে আপডেট হয়েছে!");
-        router.push("/dashboard/artist/manage-artworks");
+      const response = await res.json();
+
+      if (res.ok && (response.success || response.modifiedCount > 0)) {
+        toast.success(response.message || "Artwork updated successfully!");
         router.refresh();
+        setTimeout(() => {
+          router.push("/dashboard/artist/artworks");
+        }, 600);
       } else {
-        alert(response.message || "আপডেট করতে সমস্যা হয়েছে!");
+        toast.error(
+          response.message || "No changes detected or failed to update!",
+        );
       }
     } catch (error) {
       console.error("Update submit error:", error);
-      alert("সার্ভার কানেকশন ফেইল্ড!");
+      toast.error("Server connection failed!");
     } finally {
       setUpdating(false);
     }
@@ -96,8 +136,8 @@ const EditArtworkPage = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] gap-2">
         <Loader2 className="animate-spin text-muted-foreground" size={32} />
-        <p className="text-sm text-muted-foreground">
-          আর্টওয়ার্কের তথ্য লোড হচ্ছে...
+        <p className="text-sm text-muted-foreground animate-pulse font-medium">
+          Loading artwork details...
         </p>
       </div>
     );
@@ -105,10 +145,10 @@ const EditArtworkPage = () => {
 
   return (
     <div className="p-6 md:p-8 max-w-3xl mx-auto space-y-6 text-foreground transition-colors">
-      {/* হেডার */}
       <div className="flex items-center gap-4 border-b border-border pb-4">
-        <Link href="/dashboard/artist/manage-artworks">
+        <Link href="/dashboard/artist/artworks" passHref>
           <Button
+            type="button"
             variant="ghost"
             size="icon"
             className="rounded-full text-foreground hover:bg-muted"
@@ -119,12 +159,11 @@ const EditArtworkPage = () => {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Edit Artwork</h1>
           <p className="text-sm text-muted-foreground">
-            আপনার আর্টওয়ার্কের তথ্য সংশোধন করুন
+            Modify your artwork information below
           </p>
         </div>
       </div>
 
-      {/* ফর্ম */}
       <form
         onSubmit={handleSubmit(onFormSubmit)}
         className="space-y-5 bg-card text-card-foreground border border-border p-6 rounded-xl shadow-sm"
@@ -142,7 +181,7 @@ const EditArtworkPage = () => {
                 ? "border-destructive focus:ring-destructive/20"
                 : "border-border focus:ring-ring focus:border-primary"
             }`}
-            {...register("title", { required: "টাইটেল আবশ্যিক!" })}
+            {...register("title", { required: "Title is required!" })}
           />
           {errors.title && (
             <span className="text-xs text-destructive font-medium">
@@ -162,13 +201,15 @@ const EditArtworkPage = () => {
               className={`w-full px-3 py-2 border rounded-lg text-sm bg-transparent text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary [&>option]:bg-[hsl(var(--card))] [&>option]:text-[hsl(var(--foreground))] appearance-none ${
                 errors.category ? "border-destructive" : "border-border"
               }`}
-              {...register("category", { required: "ক্যাটাগরি সিলেক্ট করুন!" })}
+              {...register("category", {
+                required: "Please select a category!",
+              })}
             >
               <option value="">Select Category</option>
               <option value="painting">Painting</option>
-              <option value="digital">Digital Art</option>
+              <option value="digital-art">Digital Art</option>
               <option value="sculpture">Sculpture</option>
-              <option value="sketch">Sketch</option>
+              <option value="photography">Photography</option>
             </select>
             {errors.category && (
               <span className="text-xs text-destructive font-medium">
@@ -184,6 +225,7 @@ const EditArtworkPage = () => {
             </label>
             <input
               type="number"
+              step="0.01"
               placeholder="Price in USD"
               className={`w-full px-3 py-2 border rounded-lg text-sm bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 ${
                 errors.price
@@ -191,8 +233,8 @@ const EditArtworkPage = () => {
                   : "border-border focus:ring-ring focus:border-primary"
               }`}
               {...register("price", {
-                required: "মূল্য নির্ধারণ করুন!",
-                min: { value: 1, message: "মূল্য ১ ডলারের বেশি হতে হবে" },
+                required: "Price is required!",
+                min: { value: 1, message: "Price must be greater than $1" },
               })}
             />
             {errors.price && (
@@ -216,7 +258,7 @@ const EditArtworkPage = () => {
                 ? "border-destructive focus:ring-destructive/20"
                 : "border-border focus:ring-ring focus:border-primary"
             }`}
-            {...register("image_url", { required: "ছবির ইউআরএল আবশ্যক!" })}
+            {...register("image_url", { required: "Image URL is required!" })}
           />
           {errors.image_url && (
             <span className="text-xs text-destructive font-medium">
@@ -252,7 +294,7 @@ const EditArtworkPage = () => {
                 : "border-border focus:ring-ring focus:border-primary"
             }`}
             {...register("description", {
-              required: "আর্ট精度র বর্ণনা দিন!",
+              required: "Description is required!",
             })}
           />
           {errors.description && (

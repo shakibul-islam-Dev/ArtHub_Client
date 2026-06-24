@@ -1,6 +1,6 @@
 import HeroSection from "@/components/HeroSection";
 import FeatureArtWorks from "@/components/FeatureArtWorks";
-import TOpArtist from "@/components/topartist/TopArtist";
+import TopArtist from "@/components/topartist/TopArtist";
 import ArtCategories from "@/components/artcategories/ArtCategories";
 
 export default function Home() {
@@ -13,12 +13,11 @@ export default function Home() {
         {/* Featured Art Works 6 artworks dynamically if page reloads it will be auto refreshed */}
       </FeatureArtWorks>
       {/* Top Artist */}
-      <TOpArtist>{/* Most Sell 3 artist and profile picture */}</TOpArtist>
+      <TopArtist>{/* Most Sell 3 artist and profile picture */}</TopArtist>
       {/* ArtCategories */}
       <ArtCategories>
         {/* Top Categories Painting Digital Sculpture */}
       </ArtCategories>
-      <h1>Hello</h1>
     </div>
   );
 }

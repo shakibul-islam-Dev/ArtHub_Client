@@ -16,17 +16,13 @@ import {
 } from "lucide-react";
 import { Avatar, Dropdown, Label } from "@heroui/react";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 const NavigationBar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+
+  // লাইভ ক্লায়েন্ট-সাইড সেশন ট্র্যাকিং (প্রোফাইল আপডেট হলে যাতে সাথে সাথে ইমেজ চেঞ্জ হয়)
   const { data: session } = useSession();
 
   // Guard clause: ড্যাশবোর্ড পেজগুলোতে নেভিগেশন বার হাইড থাকবে
@@ -51,21 +47,24 @@ const NavigationBar = () => {
   const settingsPath = `/settings`;
   const isActive = (path) => pathname === path;
 
-  // ইউজার প্রোফাইল ডাটা
+  // ইউজার প্রোফাইল ডাটা ও ডাইনামিক ইমেজ ইউআরএল হ্যান্ডলিং
   const userInitial = session?.user?.name
     ? session.user.name.trim().charAt(0).toUpperCase()
     : "U";
   const userName = session?.user?.name || "User";
   const userEmail = session?.user?.email || "user@example.com";
 
+  // সেশন অবজেক্ট থেকে প্রোফাইল ইমেজ নেওয়া হচ্ছে (image অথবা image_url ফলব্যাক সহ)
+  const userImageUrl = session?.user?.image || session?.user?.image_url;
+
   return (
-    <nav className="bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50 transition-colors">
+    <nav className="bg-background text-foreground border-b border-border sticky top-0 z-50 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
           {/* Logo */}
           <Link
             href="/"
-            className="font-bold text-2xl text-blue-600 flex items-center tracking-tight"
+            className="font-bold text-2xl text-primary flex items-center tracking-tight"
           >
             Art Hub
           </Link>
@@ -76,8 +75,8 @@ const NavigationBar = () => {
               href="/"
               className={
                 isActive("/")
-                  ? "text-blue-600 font-bold"
-                  : "text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-500 transition"
+                  ? "text-primary font-bold"
+                  : "text-muted-foreground hover:text-primary transition"
               }
             >
               Home
@@ -86,8 +85,8 @@ const NavigationBar = () => {
               href="/browse-artworks"
               className={
                 isActive("/browse-artworks")
-                  ? "text-blue-600 font-bold"
-                  : "text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-500 transition"
+                  ? "text-primary font-bold"
+                  : "text-muted-foreground hover:text-primary transition"
               }
             >
               Browse
@@ -99,25 +98,30 @@ const NavigationBar = () => {
             {session ? (
               <Dropdown>
                 <Dropdown.Trigger className="rounded-full cursor-pointer focus:outline-none">
-                  <Avatar className="bg-blue-600 text-white font-semibold cursor-pointer">
+                  {/* src হিসেবে প্রোফাইলের ইমেজের লিংক দেওয়া হলো */}
+                  <Avatar
+                    src={userImageUrl}
+                    className="bg-primary text-primary-foreground font-semibold cursor-pointer border border-border"
+                  >
                     <Avatar.Fallback>{userInitial}</Avatar.Fallback>
                   </Avatar>
                 </Dropdown.Trigger>
 
                 <Dropdown.Popover>
-                  <div className="px-3 pt-3 pb-2 border-b border-gray-100 dark:border-gray-800">
+                  <div className="px-3 pt-3 pb-2 border-b border-border/50">
                     <div className="flex items-center gap-3">
                       <Avatar
+                        src={userImageUrl}
                         size="sm"
-                        className="bg-blue-600 text-white font-medium"
+                        className="bg-primary text-primary-foreground font-medium border border-border"
                       >
                         <Avatar.Fallback>{userInitial}</Avatar.Fallback>
                       </Avatar>
                       <div className="flex flex-col gap-0">
-                        <p className="text-sm leading-5 font-semibold text-gray-800 dark:text-gray-200">
+                        <p className="text-sm leading-5 font-semibold">
                           {userName}
                         </p>
-                        <p className="text-xs leading-none text-gray-500 dark:text-gray-400">
+                        <p className="text-xs leading-none text-muted-foreground">
                           {userEmail}
                         </p>
                       </div>
@@ -133,7 +137,10 @@ const NavigationBar = () => {
                     >
                       <div className="flex w-full items-center justify-between gap-2 py-0.5">
                         <Label className="cursor-pointer">Dashboard</Label>
-                        <LayoutDashboard size={16} className="text-gray-500" />
+                        <LayoutDashboard
+                          size={16}
+                          className="text-muted-foreground"
+                        />
                       </div>
                     </Dropdown.Item>
 
@@ -145,7 +152,7 @@ const NavigationBar = () => {
                     >
                       <div className="flex w-full items-center justify-between gap-2 py-0.5">
                         <Label className="cursor-pointer">Settings</Label>
-                        <Settings size={16} className="text-gray-500" />
+                        <Settings size={16} className="text-muted-foreground" />
                       </div>
                     </Dropdown.Item>
 
@@ -157,10 +164,10 @@ const NavigationBar = () => {
                       onPress={handleLogout}
                     >
                       <div className="flex w-full items-center justify-between gap-2 py-0.5">
-                        <Label className="text-danger cursor-pointer">
+                        <Label className="text-destructive cursor-pointer">
                           Log Out
                         </Label>
-                        <LogOut size={16} className="text-danger" />
+                        <LogOut size={16} className="text-destructive" />
                       </div>
                     </Dropdown.Item>
                   </Dropdown.Menu>
@@ -170,13 +177,13 @@ const NavigationBar = () => {
               <div className="flex items-center space-x-3">
                 <Link
                   href="/login"
-                  className="text-gray-600 dark:text-gray-300 hover:text-blue-600 transition font-medium"
+                  className="text-muted-foreground hover:text-primary transition font-medium"
                 >
                   Login
                 </Link>
                 <Link
                   href="/registration"
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-medium"
+                  className="bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:opacity-90 transition font-medium"
                 >
                   Get Started
                 </Link>
@@ -189,7 +196,7 @@ const NavigationBar = () => {
             <ModeToggle />
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="text-gray-600 dark:text-gray-300 hover:text-blue-600 focus:outline-none p-1"
+              className="text-muted-foreground hover:text-primary focus:outline-none p-1"
             >
               {isOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -199,37 +206,37 @@ const NavigationBar = () => {
 
       {/* ================= MOBILE DROPDOWN MENU ================= */}
       {isOpen && (
-        <div className="md:hidden bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800 px-4 pt-2 pb-4 space-y-3 shadow-lg absolute w-full left-0 z-40 transition-all">
+        <div className="md:hidden bg-background border-b border-border px-4 pt-2 pb-4 space-y-3 shadow-lg absolute w-full left-0 z-40 transition-all">
           <Link
             href="/"
             onClick={() => setIsOpen(false)}
-            className={`block px-3 py-2 rounded-md font-medium ${isActive("/") ? "bg-blue-50 dark:bg-blue-950/50 text-blue-600" : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900"}`}
+            className={`block px-3 py-2 rounded-md font-medium ${isActive("/") ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-muted"}`}
           >
             Home
           </Link>
           <Link
             href="/browse-artworks"
             onClick={() => setIsOpen(false)}
-            className={`block px-3 py-2 rounded-md font-medium ${isActive("/browse-artworks") ? "bg-blue-50 dark:bg-blue-950/50 text-blue-600" : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900"}`}
+            className={`block px-3 py-2 rounded-md font-medium ${isActive("/browse-artworks") ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-muted"}`}
           >
             Browse
           </Link>
 
-          <hr className="border-gray-100 dark:border-gray-800 my-2" />
+          <hr className="border-border/50 my-2" />
 
           {session ? (
             <div className="space-y-3 px-3">
               <div className="flex items-center gap-3 py-2">
-                <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-base">
-                  {userInitial}
-                </div>
+                {/* মোবাইল মেনুর জন্য ইমেজ লোড করা হলো */}
+                <Avatar
+                  src={userImageUrl}
+                  className="w-10 h-10 bg-primary text-primary-foreground font-bold text-base border border-border"
+                >
+                  <Avatar.Fallback>{userInitial}</Avatar.Fallback>
+                </Avatar>
                 <div>
-                  <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-                    {userName}
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {userEmail}
-                  </p>
+                  <p className="text-sm font-semibold">{userName}</p>
+                  <p className="text-xs text-muted-foreground">{userEmail}</p>
                 </div>
               </div>
 
@@ -237,7 +244,7 @@ const NavigationBar = () => {
               <Link
                 href={dashboardPath}
                 onClick={() => setIsOpen(false)}
-                className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 py-2 transition text-sm font-medium"
+                className="flex items-center gap-2 text-muted-foreground hover:text-primary py-2 transition text-sm font-medium"
               >
                 <LayoutDashboard size={18} /> Dashboard
               </Link>
@@ -246,7 +253,7 @@ const NavigationBar = () => {
               <Link
                 href={settingsPath}
                 onClick={() => setIsOpen(false)}
-                className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 py-2 transition text-sm font-medium"
+                className="flex items-center gap-2 text-muted-foreground hover:text-primary py-2 transition text-sm font-medium"
               >
                 <Settings size={18} /> Settings
               </Link>
@@ -257,7 +264,7 @@ const NavigationBar = () => {
                   setIsOpen(false);
                   handleLogout();
                 }}
-                className="flex w-full items-center gap-2 text-red-600 hover:text-red-700 py-2 transition text-sm font-medium"
+                className="flex w-full items-center gap-2 text-destructive hover:opacity-90 py-2 transition text-sm font-medium"
               >
                 <LogOut size={18} /> Log Out
               </button>
@@ -267,14 +274,14 @@ const NavigationBar = () => {
               <Link
                 href="/login"
                 onClick={() => setIsOpen(false)}
-                className="text-center text-gray-600 dark:text-gray-300 hover:text-blue-600 py-2 rounded-lg font-medium border border-gray-200 dark:border-gray-800"
+                className="text-center text-muted-foreground hover:text-primary py-2 rounded-lg font-medium border border-border"
               >
                 Login
               </Link>
               <Link
                 href="/registration"
                 onClick={() => setIsOpen(false)}
-                className="text-center bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 transition"
+                className="text-center bg-primary text-primary-foreground py-2 rounded-lg font-medium hover:opacity-90 transition"
               >
                 Get Started
               </Link>
@@ -288,33 +295,21 @@ const NavigationBar = () => {
 
 export default NavigationBar;
 
+/* ================= পরিমার্জিত সরাসরি থিম টগল বাটন ================= */
 export function ModeToggle() {
-  const { setTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="outline"
-          size="icon"
-          className="relative w-9 h-9 shrink-0 rounded-lg"
-        >
-          <Sun className="h-[1.2rem] w-[1.2rem] scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />
-          <Moon className="absolute h-[1.2rem] w-[1.2rem] scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0" />
-          <span className="sr-only">Toggle theme</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => setTheme("light")}>
-          Light
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("dark")}>
-          Dark
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("system")}>
-          System
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <Button
+      variant="outline"
+      size="icon"
+      onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+      className="relative w-9 h-9 shrink-0 rounded-lg border-border"
+      title="Toggle theme"
+    >
+      <Sun className="h-[1.2rem] w-[1.2rem] scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90 text-foreground" />
+      <Moon className="absolute h-[1.2rem] w-[1.2rem] scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0 text-foreground" />
+      <span className="sr-only">Toggle theme</span>
+    </Button>
   );
 }

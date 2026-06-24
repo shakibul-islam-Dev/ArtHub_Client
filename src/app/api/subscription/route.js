@@ -9,15 +9,15 @@ export async function POST() {
     const headersList = await headers();
     const origin = headersList.get("origin");
 
-    const userSession = await auth.api.getSession({
+    const user = await auth.api.getSession({
       headers: await headers(),
     });
-    console.log(userSession);
+    console.log(user);
     const PRICE_ID = "price_1TkODgHE1aRpzyeZS4b8idsi";
 
     // Create Checkout Sessions from body params.
     const session = await stripe.checkout.sessions.create({
-      customer: userSession.user.id,
+      customer_email: user?.email,
 
       line_items: [
         {
@@ -27,8 +27,8 @@ export async function POST() {
       ],
       metadata: {
         priceId: PRICE_ID,
-        userEmail: userSession.user.email,
-        userId: userSession.user.id,
+        userEmail: user?.email,
+        userId: user?.id,
       },
       mode: "subscription",
       success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
