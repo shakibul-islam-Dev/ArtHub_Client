@@ -24,6 +24,7 @@ const NavigationBar = () => {
 
   // লাইভ ক্লায়েন্ট-সাইড সেশন ট্র্যাকিং (প্রোফাইল আপডেট হলে যাতে সাথে সাথে ইমেজ চেঞ্জ হয়)
   const { data: session } = useSession();
+  console.log(session);
 
   // Guard clause: ড্যাশবোর্ড পেজগুলোতে নেভিগেশন বার হাইড থাকবে
   if (pathname.startsWith("/dashboard/")) {

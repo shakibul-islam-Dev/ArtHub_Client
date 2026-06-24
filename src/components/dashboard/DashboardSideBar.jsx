@@ -32,12 +32,9 @@ export default function DashboardSideBar({ session: initialSession }) {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
 
-  // ১. প্রোফাইল আপডেট ফর্ম থেকে ডাটা চেঞ্জ হলে যাতে সাইডবারে সাথে সাথে আপডেট হয়,
-  // সেজন্য authClient এর একটি সেশন স্টেট ট্র্যাকিং সেট করা হলো।
   const { data: updatedSession } = authClient.useSession();
   const currentSession = updatedSession || initialSession;
 
-  // সরাসরি ব্যাকএন্ড থেকে লেটেস্ট ডাটা গেট (Fetch) করার ইফেক্ট
   useEffect(() => {
     const fetchLatestUserImage = async () => {
       if (currentSession?.user?.id) {
@@ -45,7 +42,7 @@ export default function DashboardSideBar({ session: initialSession }) {
           const baseUrl =
             process.env.NEXT_PUBLIC_URL || "http://localhost:5000";
           const res = await fetch(
-            `${baseUrl}/api/artHub/users/${currentSession.user.id}`,
+            `${baseUrl}/api/arthub/users/${currentSession.user.id}`,
           );
           if (res.ok) {
             const data = await res.json();

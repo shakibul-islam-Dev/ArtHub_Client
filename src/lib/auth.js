@@ -28,12 +28,6 @@ export const auth = betterAuth({
         input: true,
         defaultValue: "user",
       },
-      plan: {
-        type: "string",
-        required: false,
-        input: true,
-        defaultValue: "free",
-      },
     },
   },
   session: {
