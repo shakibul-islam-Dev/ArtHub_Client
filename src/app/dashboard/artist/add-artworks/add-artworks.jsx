@@ -91,13 +91,11 @@ export default function AddProductForm({ artist }) {
       const imgData = await res.json();
       const imageUrl = imgData.data.url;
 
-      // আর্টিস্ট আইডি ও নাম সেফলি এক্সট্রাক্ট করা হচ্ছে
       const currentArtistId =
         artist.id || artist._id || artist.user?.id || artist.user?._id;
       const currentArtistName =
         artist.name || artist.username || artist.user?.name || "Unknown Artist";
 
-      // হুবহু আপনার দেওয়া অরিজিনাল পে-লোড স্ট্রাকচার
       const payload = {
         artist_id: currentArtistId,
         title: data.title,
@@ -111,8 +109,7 @@ export default function AddProductForm({ artist }) {
         date_uploaded: new Date().toISOString(),
       };
 
-      // এখানে সার্ভার অ্যাকশনের বদলে আপনার এক্সপ্রেস ব্যাকএন্ডে ডিরেক্ট POST করা হচ্ছে
-      const response = await fetch(`${DATABASE_API_URL}/api/artHub/artwork`, {
+      const response = await fetch(`${DATABASE_API_URL}/api/arthub/artwork`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

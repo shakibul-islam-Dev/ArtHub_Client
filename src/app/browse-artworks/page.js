@@ -2,9 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Skeleton } from "@heroui/react";
-import { getArtPost } from "@/lib/actions/arthubdatabse";
 import Link from "next/link";
-import Image from "next/image";
 
 const BrowseArtworksPage = () => {
   const [artworks, setArtworks] = useState([]);
@@ -17,11 +15,21 @@ const BrowseArtworksPage = () => {
   const [maxPrice, setMaxPrice] = useState("");
   const [sortBy, setSortBy] = useState("newest");
 
+  // ব্যাকএন্ড ইউআরএল কনফিগারেশন
+  const apiUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:5000";
+
   useEffect(() => {
     const fetchArtworks = async () => {
       try {
         setLoading(true);
-        const data = await getArtPost();
+
+        const response = await fetch(`${apiUrl}/api/arthub/artwork`);
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch artworks");
+        }
+
+        const data = await response.json();
         if (data) {
           setArtworks(data);
         }
@@ -33,7 +41,7 @@ const BrowseArtworksPage = () => {
     };
 
     fetchArtworks();
-  }, []);
+  }, [apiUrl]);
 
   // 1. Extract unique categories dynamically
   const categories = [
@@ -194,12 +202,12 @@ const BrowseArtworksPage = () => {
                   className="group bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col cursor-pointer"
                 >
                   <div className="relative w-full h-48 overflow-hidden bg-neutral-100 dark:bg-neutral-950">
-                    <Image
+                    {/* Next.js Image ডোমেইন ত্রুটি এড়াতে স্ট্যান্ডার্ড img ব্যবহার করা হয়েছে */}
+                    <img
                       src={artImage}
                       alt={art.title || "Artwork"}
-                      fill
-                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                      className="object-cover group-hover:scale-105 transition-transform duration-500"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      loading="lazy"
                     />
                     <span className="absolute top-3 right-3 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-sm text-xs font-semibold px-2.5 py-1 rounded-full text-neutral-700 dark:text-neutral-300 shadow-sm z-10">
                       {art.category || "Art"}

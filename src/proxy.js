@@ -9,9 +9,9 @@ export async function proxy(request) {
   const role = session?.user?.role;
   const plan = session?.user?.plan;
 
-  if (role !== "artist" || plan !== "pro") {
-    return NextResponse.redirect(new URL("/pricing", request.url));
-  }
+  // if (role !== "artist" || plan !== "pro") {
+  //   return NextResponse.redirect(new URL("/pricing", request.url));
+  // }
 
   return NextResponse.next();
 }

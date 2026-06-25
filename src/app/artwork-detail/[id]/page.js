@@ -2,8 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { getSingleArtPost } from "@/lib/actions/arthubdatabse";
-import Image from "next/image";
 import Link from "next/link";
 import {
   Calendar,
@@ -17,29 +15,19 @@ import {
   ShoppingBag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-const MOCK_COMMENTS = [
-  {
-    _id: "c1",
-    username: "Anika_ArtLover",
-    text: "The color contrast in this piece is absolutely magnificent! Captures the true essence of Dhaka rain.",
-    createdAt: "2026-06-16T14:22:00.000Z",
-  },
-  {
-    _id: "c2",
-    username: "Rahat_007",
-    text: "Is there a physical canvas version available or is this strictly digital?",
-    createdAt: "2026-06-17T09:05:00.000Z",
-  },
-];
+import { useSession } from "@/lib/auth-client";
 
 export default function ArtworkDetail() {
+  const apiUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:5000";
   const router = useRouter();
   const params = useParams();
   const id = params?.id;
 
+  // Better-Auth সেশন ডেটা
+  const { data: session, isPending: sessionLoading } = useSession();
+
   const [artwork, setArtwork] = useState(null);
-  const [comments, setComments] = useState(MOCK_COMMENTS);
+  const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -49,21 +37,24 @@ export default function ArtworkDetail() {
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editingText, setEditingText] = useState("");
 
-  const [user] = useState({
-    id: "user_123",
-    token: "mock_jwt_token",
-    role: "buyer",
-  });
-
+  // আর্টওয়ার্ক ডেটা ফেচ
   useEffect(() => {
     const fetchArtworkData = async () => {
       if (!id) return;
       try {
         setLoading(true);
         setError(false);
-        const data = await getSingleArtPost(id);
+
+        const response = await fetch(`${apiUrl}/api/arthub/artwork/${id}`);
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch artwork detail");
+        }
+
+        const data = await response.json();
         if (data) {
           setArtwork(data);
+          setComments(data.comments || []);
         } else {
           setError(true);
         }
@@ -76,73 +67,151 @@ export default function ArtworkDetail() {
     };
 
     fetchArtworkData();
-  }, [id]);
+  }, [id, apiUrl]);
 
-  const handlePurchase = () => {
-    if (!user) return router.push("/login");
-    if (user.id === artwork?.artist?._id || user.id === artwork?.artist) {
+  // পারচেজ হ্যান্ডলার
+  const handlePurchase = async () => {
+    if (!session?.user) {
+      router.push("/login");
+      return;
+    }
+
+    // ইউজার রোল যদি আর্টিস্ট হয়, তবে সে পারচেজ করতে পারবে না
+    if (session.user.role === "artist") {
+      alert("Artists are not allowed to purchase artworks!");
+      return;
+    }
+
+    const artistId = artwork?.artist?._id || artwork?.artist;
+    if (session.user.id === artistId) {
       alert("You cannot buy your own artwork!");
       return;
     }
-    setActionLoading(true);
-    alert(
-      `Redirecting to Stripe Checkout for: ${artwork?.title} ($${artwork?.price})`,
-    );
-    setActionLoading(false);
+
+    try {
+      setActionLoading(true);
+
+      const res = await fetch(`${apiUrl}/api/arthub/checkout`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          artworkId: artwork._id,
+          userId: session.user.id,
+        }),
+      });
+
+      const checkoutData = await res.json();
+      if (checkoutData?.url) {
+        window.location.href = checkoutData.url;
+      } else {
+        alert("Failed to initiate checkout");
+      }
+    } catch (err) {
+      console.error("Checkout Error:", err);
+    } finally {
+      setActionLoading(false);
+    }
   };
 
-  // Create Comment
-  const handleCommentSubmit = (e) => {
+  // কমেন্ট সাবমিট
+  const handleCommentSubmit = async (e) => {
     e.preventDefault();
+    if (!session?.user) {
+      router.push("/login");
+      return;
+    }
     if (!newComment.trim()) return;
 
-    const newCommentObj = {
-      _id: `c_${Date.now()}`,
-      username: "You (Logged In User)",
-      text: newComment,
-      createdAt: new Date().toISOString(),
-    };
+    try {
+      const res = await fetch(`${apiUrl}/api/arthub/artwork/${id}/comment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: newComment,
+          userId: session.user.id,
+          username: session.user.name,
+        }),
+      });
 
-    setComments([...comments, newCommentObj]);
-    setNewComment("");
+      if (res.ok) {
+        const updatedArtwork = await res.json();
+        setComments(updatedArtwork.comments || []);
+        setNewComment("");
+      }
+    } catch (err) {
+      console.error("Comment post error:", err);
+    }
   };
 
-  // Setup Edit Mode
-  const startEditing = (comment) => {
-    setEditingCommentId(comment._id);
-    setEditingText(comment.text);
-  };
-
-  // Save Edited Comment
-  const handleEditSubmit = (commentId) => {
+  // কমেন্ট এডিট সেভ
+  const handleEditSubmit = async (commentId) => {
     if (!editingText.trim()) return;
 
-    setComments(
-      comments.map((c) =>
-        c._id === commentId
-          ? { ...c, text: editingText, createdAt: new Date().toISOString() }
-          : c,
-      ),
-    );
-    setEditingCommentId(null);
-    setEditingText("");
-  };
+    try {
+      const res = await fetch(
+        `${apiUrl}/api/arthub/artwork/${id}/comment/${commentId}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: editingText }),
+        },
+      );
 
-  // Delete Comment
-  const handleCommentDelete = (commentId) => {
-    if (confirm("Are you sure you want to delete this comment?")) {
-      setComments(comments.filter((c) => c._id !== commentId));
+      if (res.ok) {
+        setComments(
+          comments.map((c) =>
+            c._id === commentId ? { ...c, text: editingText } : c,
+          ),
+        );
+        setEditingCommentId(null);
+        setEditingText("");
+      }
+    } catch (err) {
+      console.error("Comment edit error:", err);
     }
   };
 
-  const handleDelete = () => {
-    if (confirm("Are you sure you want to delete this artwork?")) {
-      alert("Artwork deleted successfully! (Mock Action)");
-      router.push("/");
+  // কমেন্ট ডিলিট
+  const handleCommentDelete = async (commentId) => {
+    if (!confirm("Are you sure you want to delete this comment?")) return;
+
+    try {
+      const res = await fetch(
+        `${apiUrl}/api/arthub/artwork/${id}/comment/${commentId}`,
+        {
+          method: "DELETE",
+        },
+      );
+
+      if (res.ok) {
+        setComments(comments.filter((c) => c._id !== commentId));
+      }
+    } catch (err) {
+      console.error("Comment delete error:", err);
     }
   };
 
-  if (loading)
+  // আর্টওয়ার্ক পোস্ট ডিলিট
+  const handleDelete = async () => {
+    if (!confirm("Are you sure you want to delete this artwork?")) return;
+
+    try {
+      const res = await fetch(`${apiUrl}/api/arthub/artwork/${id}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        router.push("/");
+        router.refresh();
+      }
+    } catch (err) {
+      console.error("Artwork delete error:", err);
+    }
+  };
+
+  if (loading || sessionLoading)
     return (
       <div className="min-h-[70vh] flex flex-col gap-3 items-center justify-center text-sm font-medium text-gray-500 dark:text-gray-400">
         <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
@@ -169,18 +238,16 @@ export default function ArtworkDetail() {
       </div>
     );
 
-  const artImage =
-    artwork.imageUrl ||
-    artwork.image_url ||
-    artwork.image ||
-    "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=500";
+  const artImage = artwork.imageUrl || artwork.image_url || artwork.image;
   const artistName =
-    artwork.artist?.name ||
-    artwork.artist ||
-    artwork.artistName ||
-    "Unknown Artist";
-  const artistId = artwork.artist?._id || artwork.artist || "unknown";
-  const isArtistOwner = user?.id === artistId;
+    artwork.artist?.name || artwork.artist || artwork.artistName;
+  const artistId = artwork.artist?._id || artwork.artist;
+
+  // কারেন্ট সেশন ইউজার আইডি মিলিয়ে ওনারশিপ চেক
+  const isArtistOwner = session?.user?.id === artistId;
+
+  // 🛠️ মেইন কন্ডিশন: লগইন করা ইউজারের রোল যদি "artist" হয়, তবে পারচেজ বাটন ইনঅ্যাক্টিভ হবে
+  const isPurchaseDisabled = session?.user?.role === "artist";
 
   return (
     <div className="min-h-screen bg-gray-50/50 dark:bg-gray-950 py-8 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
@@ -202,22 +269,18 @@ export default function ArtworkDetail() {
         {/* Main Artwork Frame Card */}
         <div className="bg-white dark:bg-gray-900/60 backdrop-blur-md rounded-2xl overflow-hidden shadow-xl border border-gray-100 dark:border-gray-800/80 transition-all duration-300">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-6 lg:p-8">
-            {/* Left Column: Image Canvas wrapper */}
+            {/* Image Wrapper */}
             <div className="relative w-full h-[350px] sm:h-[480px] lg:h-[540px] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-950 border border-gray-100 dark:border-gray-800 shadow-inner group aspect-square md:aspect-auto">
-              <Image
+              <img
                 src={artImage}
                 alt={artwork.title || "Artwork"}
-                fill
-                sizes="(max-width: 768px) 100vw, 50vw"
-                className="object-cover group-hover:scale-[1.02] transition-transform duration-500"
-                priority
+                className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
               />
             </div>
 
-            {/* Right Column: Dynamic Info Container */}
+            {/* Right Column: Info */}
             <div className="flex flex-col justify-between space-y-6">
               <div className="space-y-4">
-                {/* Category Badge */}
                 <div className="flex items-center gap-1.5">
                   <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 text-xs font-bold rounded-full tracking-wider uppercase border border-blue-100 dark:border-blue-900/30">
                     <Tag size={12} />
@@ -225,12 +288,10 @@ export default function ArtworkDetail() {
                   </span>
                 </div>
 
-                {/* Title */}
                 <h1 className="text-3xl lg:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">
                   {artwork.title || "Untitled"}
                 </h1>
 
-                {/* Artist Meta Link */}
                 <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                   <div className="w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
                     <User size={14} className="text-gray-500" />
@@ -244,7 +305,6 @@ export default function ArtworkDetail() {
                   </Link>
                 </div>
 
-                {/* Description Canvas */}
                 <div className="bg-gray-50/70 dark:bg-gray-950/40 p-4 rounded-xl border border-gray-100 dark:border-gray-800/80 mt-2">
                   <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 leading-relaxed">
                     {artwork.description ||
@@ -252,7 +312,6 @@ export default function ArtworkDetail() {
                   </p>
                 </div>
 
-                {/* Pricing & Metric Rows */}
                 <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-800/60">
                   <div>
                     <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
@@ -283,11 +342,13 @@ export default function ArtworkDetail() {
               </div>
 
               {/* Call To Actions */}
-              <div className="pt-4 border-t border-gray-100 dark:border-gray-800/60">
-                {isArtistOwner ? (
+              <div className="pt-4 border-t border-gray-100 dark:border-gray-800/60 space-y-3">
+                {isArtistOwner && (
                   <div className="grid grid-cols-2 gap-3">
                     <Button
-                      onClick={() => alert("Navigating to edit form...")}
+                      onClick={() =>
+                        router.push(`/dashboard/artist/edit-artwork/${id}`)
+                      }
                       className="h-12 bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500 text-white font-bold rounded-xl transition-all shadow-md active:scale-[0.99]"
                     >
                       <Edit3 size={16} className="mr-2" />
@@ -302,6 +363,19 @@ export default function ArtworkDetail() {
                       Delete
                     </Button>
                   </div>
+                )}
+
+                {/* 🛠️ ইউজার রোল 'artist' হলে পারচেজ বাটনটি ডিসেবলড এবং ইনঅ্যাক্টিভ দেখাবে */}
+                {isPurchaseDisabled ? (
+                  <Button
+                    disabled
+                    className="w-full h-12 bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-500 font-bold text-base rounded-xl cursor-not-allowed opacity-60 transition-all"
+                  >
+                    <ShoppingBag size={18} className="mr-2" />
+                    {isArtistOwner
+                      ? "You Own This Masterpiece"
+                      : "Artists Cannot Purchase"}
+                  </Button>
                 ) : (
                   <Button
                     onClick={handlePurchase}
@@ -319,7 +393,7 @@ export default function ArtworkDetail() {
           </div>
         </div>
 
-        {/* Discussion Center Area */}
+        {/* Community Discussion */}
         <div className="bg-white dark:bg-gray-900/60 backdrop-blur-md rounded-2xl border border-gray-100 dark:border-gray-800/80 shadow-lg p-6 lg:p-8">
           <div className="flex items-center gap-2 mb-6">
             <MessageSquare
@@ -331,27 +405,32 @@ export default function ArtworkDetail() {
             </h2>
           </div>
 
-          {/* New Comment Submission Block */}
           <form onSubmit={handleCommentSubmit} className="mb-8 space-y-3">
             <textarea
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
-              placeholder="Share your thoughts or ask a question about this artwork..."
+              placeholder={
+                session?.user
+                  ? "Share your thoughts about this artwork..."
+                  : "Please log in to comment..."
+              }
+              disabled={!session?.user}
               rows={3}
-              className="w-full p-3.5 bg-gray-50/50 dark:bg-gray-950/50 border border-gray-200 dark:border-gray-800 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:focus:ring-blue-500/5 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-all resize-none"
+              className="w-full p-3.5 bg-gray-50/50 dark:bg-gray-950/50 border border-gray-200 dark:border-gray-800 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:focus:ring-blue-500/5 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-all resize-none disabled:opacity-60"
               required
             />
-            <div className="flex justify-end">
-              <Button
-                type="submit"
-                className="bg-gray-900 hover:bg-gray-800 dark:bg-gray-100 dark:hover:bg-white text-white dark:text-gray-900 font-semibold rounded-xl px-5 transition-all shadow-sm"
-              >
-                Comment
-              </Button>
-            </div>
+            {session?.user && (
+              <div className="flex justify-end">
+                <Button
+                  type="submit"
+                  className="bg-gray-900 hover:bg-gray-800 dark:bg-gray-100 dark:hover:bg-white text-white dark:text-gray-900 font-semibold rounded-xl px-5 transition-all shadow-sm"
+                >
+                  Comment
+                </Button>
+              </div>
+            )}
           </form>
 
-          {/* Real-time Comments Stream */}
           <div className="space-y-4 max-h-96 overflow-y-auto pr-1">
             {comments.length === 0 ? (
               <p className="text-center py-6 text-sm text-gray-400 dark:text-gray-500">
@@ -360,7 +439,8 @@ export default function ArtworkDetail() {
             ) : (
               comments.map((comment) => {
                 const isCommentOwner =
-                  comment.username === "You (Logged In User)";
+                  session?.user?.id === comment.userId ||
+                  comment.username === session?.user?.name;
                 const isEditing = editingCommentId === comment._id;
 
                 return (
@@ -373,13 +453,14 @@ export default function ArtworkDetail() {
                         {comment.username}
                       </span>
                       <span className="text-[11px] text-gray-400 dark:text-gray-500 font-medium">
-                        {new Date(comment.createdAt).toLocaleDateString(
-                          "en-US",
-                          {
-                            month: "short",
-                            day: "numeric",
-                          },
-                        )}
+                        {comment.createdAt &&
+                          new Date(comment.createdAt).toLocaleDateString(
+                            "en-US",
+                            {
+                              month: "short",
+                              day: "numeric",
+                            },
+                          )}
                       </span>
                     </div>
 
@@ -388,19 +469,19 @@ export default function ArtworkDetail() {
                         <textarea
                           value={editingText}
                           onChange={(e) => setEditingText(e.target.value)}
-                          className="w-full p-2.5 bg-white dark:bg-gray-950 border border-blue-500 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-500/10"
+                          className="w-full p-2.5 bg-white dark:bg-gray-950 border border-blue-500 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none"
                           rows={2}
                         />
                         <div className="flex space-x-2 text-xs">
                           <button
                             onClick={() => handleEditSubmit(comment._id)}
-                            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-md shadow-sm transition"
+                            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-md"
                           >
                             Save Change
                           </button>
                           <button
                             onClick={() => setEditingCommentId(null)}
-                            className="px-3 py-1.5 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-md transition"
+                            className="px-3 py-1.5 bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-md"
                           >
                             Cancel
                           </button>
@@ -415,16 +496,17 @@ export default function ArtworkDetail() {
                         {isCommentOwner && (
                           <div className="flex items-center space-x-2.5 shrink-0 pt-0.5">
                             <button
-                              onClick={() => startEditing(comment)}
+                              onClick={() => {
+                                setEditingCommentId(comment._id);
+                                setEditingText(comment.text);
+                              }}
                               className="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors p-1"
-                              title="Edit comment"
                             >
                               <Edit3 size={14} />
                             </button>
                             <button
                               onClick={() => handleCommentDelete(comment._id)}
                               className="text-gray-400 hover:text-red-500 transition-colors p-1"
-                              title="Delete comment"
                             >
                               <Trash2 size={14} />
                             </button>

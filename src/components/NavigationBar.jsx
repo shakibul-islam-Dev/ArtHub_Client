@@ -22,11 +22,8 @@ const NavigationBar = () => {
   const pathname = usePathname();
   const router = useRouter();
 
-  // লাইভ ক্লায়েন্ট-সাইড সেশন ট্র্যাকিং (প্রোফাইল আপডেট হলে যাতে সাথে সাথে ইমেজ চেঞ্জ হয়)
   const { data: session } = useSession();
-  console.log(session);
 
-  // Guard clause: ড্যাশবোর্ড পেজগুলোতে নেভিগেশন বার হাইড থাকবে
   if (pathname.startsWith("/dashboard/")) {
     return null;
   }
@@ -43,20 +40,18 @@ const NavigationBar = () => {
     });
   };
 
-  const role = session?.user?.role || "user";
+  const role = session?.user?.role;
   const dashboardPath = `/dashboard/${role}`;
   const settingsPath = `/settings`;
   const isActive = (path) => pathname === path;
 
-  // ইউজার প্রোফাইল ডাটা ও ডাইনামিক ইমেজ ইউআরএল হ্যান্ডলিং
-  const userInitial = session?.user?.name
-    ? session.user.name.trim().charAt(0).toUpperCase()
-    : "U";
-  const userName = session?.user?.name || "User";
-  const userEmail = session?.user?.email || "user@example.com";
+  const userName = session?.user?.name;
+  const userEmail = session?.user?.email;
 
-  // সেশন অবজেক্ট থেকে প্রোফাইল ইমেজ নেওয়া হচ্ছে (image অথবা image_url ফলব্যাক সহ)
-  const userImageUrl = session?.user?.image || session?.user?.image_url;
+  // 🛠️ ডাটাবেজ বা সেশনের সম্ভাব্য সব ইমেজ ফিল্ড একসাথে হ্যান্ডেল করা হলো
+  const userImageUrl =
+    session?.user?.image || session?.user?.image_url || session?.user?.picture;
+  const userInitial = userName?.trim().charAt(0).toUpperCase() || "U";
 
   return (
     <nav className="bg-background text-foreground border-b border-border sticky top-0 z-50 transition-colors">
@@ -96,48 +91,58 @@ const NavigationBar = () => {
             {/* Dark Mode Toggle */}
             <ModeToggle />
 
-            {session ? (
+            {session && (
               <Dropdown>
                 <Dropdown.Trigger className="rounded-full cursor-pointer focus:outline-none">
-                  {/* src হিসেবে প্রোফাইলের ইমেজের লিংক দেওয়া হলো */}
-                  <Avatar
-                    src={userImageUrl}
-                    className="bg-primary text-primary-foreground font-semibold cursor-pointer border border-border"
-                  >
-                    <Avatar.Fallback>{userInitial}</Avatar.Fallback>
-                  </Avatar>
+                  <div>
+                    {" "}
+                    {/* Trigger এরর এড়াতে div র‍্যাপার যোগ করা হয়েছে */}
+                    <Avatar
+                      src={userImageUrl || undefined}
+                      name={userInitial}
+                      className="bg-primary text-primary-foreground font-semibold cursor-pointer border border-border"
+                    >
+                      {!userImageUrl && userInitial}
+                    </Avatar>
+                  </div>
                 </Dropdown.Trigger>
 
-                <Dropdown.Popover>
+                <Dropdown.Popover className="bg-popover text-popover-foreground border border-border">
                   <div className="px-3 pt-3 pb-2 border-b border-border/50">
                     <div className="flex items-center gap-3">
                       <Avatar
-                        src={userImageUrl}
+                        src={userImageUrl || undefined}
+                        name={userInitial}
                         size="sm"
                         className="bg-primary text-primary-foreground font-medium border border-border"
                       >
-                        <Avatar.Fallback>{userInitial}</Avatar.Fallback>
+                        {!userImageUrl && userInitial}
                       </Avatar>
                       <div className="flex flex-col gap-0">
-                        <p className="text-sm leading-5 font-semibold">
-                          {userName}
-                        </p>
-                        <p className="text-xs leading-none text-muted-foreground">
-                          {userEmail}
-                        </p>
+                        {userName && (
+                          <p className="text-sm leading-5 font-semibold">
+                            {userName}
+                          </p>
+                        )}
+                        {userEmail && (
+                          <p className="text-xs leading-none text-muted-foreground">
+                            {userEmail}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
 
                   <Dropdown.Menu>
-                    {/* ড্যাশবোর্ড */}
                     <Dropdown.Item
                       id="dashboard"
                       textValue="Dashboard"
                       onPress={() => router.push(dashboardPath)}
                     >
                       <div className="flex w-full items-center justify-between gap-2 py-0.5">
-                        <Label className="cursor-pointer">Dashboard</Label>
+                        <Label className="cursor-pointer text-foreground">
+                          Dashboard
+                        </Label>
                         <LayoutDashboard
                           size={16}
                           className="text-muted-foreground"
@@ -145,19 +150,19 @@ const NavigationBar = () => {
                       </div>
                     </Dropdown.Item>
 
-                    {/* সেটিংস */}
                     <Dropdown.Item
                       id="settings"
                       textValue="Settings"
                       onPress={() => router.push(settingsPath)}
                     >
                       <div className="flex w-full items-center justify-between gap-2 py-0.5">
-                        <Label className="cursor-pointer">Settings</Label>
+                        <Label className="cursor-pointer text-foreground">
+                          Settings
+                        </Label>
                         <Settings size={16} className="text-muted-foreground" />
                       </div>
                     </Dropdown.Item>
 
-                    {/* লগআউট */}
                     <Dropdown.Item
                       id="logout"
                       textValue="Logout"
@@ -174,7 +179,9 @@ const NavigationBar = () => {
                   </Dropdown.Menu>
                 </Dropdown.Popover>
               </Dropdown>
-            ) : (
+            )}
+
+            {!session && (
               <div className="flex items-center space-x-3">
                 <Link
                   href="/login"
@@ -228,20 +235,23 @@ const NavigationBar = () => {
           {session ? (
             <div className="space-y-3 px-3">
               <div className="flex items-center gap-3 py-2">
-                {/* মোবাইল মেনুর জন্য ইমেজ লোড করা হলো */}
                 <Avatar
-                  src={userImageUrl}
+                  src={userImageUrl || undefined}
+                  name={userInitial}
                   className="w-10 h-10 bg-primary text-primary-foreground font-bold text-base border border-border"
                 >
-                  <Avatar.Fallback>{userInitial}</Avatar.Fallback>
+                  {!userImageUrl && userInitial}
                 </Avatar>
                 <div>
-                  <p className="text-sm font-semibold">{userName}</p>
-                  <p className="text-xs text-muted-foreground">{userEmail}</p>
+                  {userName && (
+                    <p className="text-sm font-semibold">{userName}</p>
+                  )}
+                  {userEmail && (
+                    <p className="text-xs text-muted-foreground">{userEmail}</p>
+                  )}
                 </div>
               </div>
 
-              {/* মোবাইল ড্যাশবোর্ড লিংক */}
               <Link
                 href={dashboardPath}
                 onClick={() => setIsOpen(false)}
@@ -250,7 +260,6 @@ const NavigationBar = () => {
                 <LayoutDashboard size={18} /> Dashboard
               </Link>
 
-              {/* মোবাইল সেটিংস লিংক */}
               <Link
                 href={settingsPath}
                 onClick={() => setIsOpen(false)}
@@ -259,7 +268,6 @@ const NavigationBar = () => {
                 <Settings size={18} /> Settings
               </Link>
 
-              {/* মোবাইল লগআউট বাটন */}
               <button
                 onClick={() => {
                   setIsOpen(false);
@@ -296,7 +304,7 @@ const NavigationBar = () => {
 
 export default NavigationBar;
 
-/* ================= পরিমার্জিত সরাসরি থিম টগল বাটন ================= */
+/* ================= থিম টগল বাটন ================= */
 export function ModeToggle() {
   const { theme, setTheme } = useTheme();
 
@@ -305,7 +313,7 @@ export function ModeToggle() {
       variant="outline"
       size="icon"
       onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-      className="relative w-9 h-9 shrink-0 rounded-lg border-border"
+      className="relative w-9 h-9 shrink-0 rounded-lg border-border bg-background hover:bg-accent"
       title="Toggle theme"
     >
       <Sun className="h-[1.2rem] w-[1.2rem] scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90 text-foreground" />

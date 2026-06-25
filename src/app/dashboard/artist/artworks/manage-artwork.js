@@ -21,7 +21,7 @@ const ManageArtWorks = ({ userData }) => {
   const [deletingId, setDeletingId] = useState(null);
 
   // মোডাল এবং অ্যাক্টিভ ডাটা ট্র্যাকিং স্টেট
-  const [modalType, setModalType] = useState(null); // "edit" | "delete" | null
+  const [modalType, setModalType] = useState(null);
   const [activeArt, setActiveArt] = useState(null);
 
   const artistId =
@@ -36,7 +36,7 @@ const ManageArtWorks = ({ userData }) => {
         setLoading(true);
         // আপনার এক্সপ্রেস ব্যাকএন্ড এন্ডপয়েন্ট থেকে ডাটা আনা হচ্ছে
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_URL}/api/artHub/artwork`,
+          `${process.env.NEXT_PUBLIC_URL}/api/arthub/artwork`,
           { cache: "no-store" },
         );
         const allArtworks = await res.json();

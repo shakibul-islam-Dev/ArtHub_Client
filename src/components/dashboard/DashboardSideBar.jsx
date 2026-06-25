@@ -32,35 +32,35 @@ export default function DashboardSideBar({ session: initialSession }) {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
 
+  // Better Auth ক্লায়েন্ট সেশন হুক কল করার সঠিক প্যাটার্ন
   const { data: updatedSession } = authClient.useSession();
   const currentSession = updatedSession || initialSession;
 
   useEffect(() => {
     const fetchLatestUserImage = async () => {
-      if (currentSession?.user?.id) {
-        try {
-          const baseUrl =
-            process.env.NEXT_PUBLIC_URL || "http://localhost:5000";
-          const res = await fetch(
-            `${baseUrl}/api/arthub/users/${currentSession.user.id}`,
-          );
-          if (res.ok) {
-            const data = await res.json();
-            const fetchedImage = data?.success
-              ? data.data?.image_url || data.data?.image
-              : data?.image_url || data?.image;
-            setDbUserImage(fetchedImage);
-          }
-        } catch (error) {
-          console.error("Error fetching latest user image on sidebar:", error);
+      if (!currentSession?.user?.id) return;
+
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:5000";
+        const res = await fetch(
+          `${baseUrl}/api/arthub/user/${currentSession.user.id}`,
+        );
+        if (res.ok) {
+          const data = await res.json();
+          const fetchedImage = data?.success
+            ? data.data?.image_url || data.data?.image
+            : data?.image_url || data?.image;
+          setDbUserImage(fetchedImage);
         }
+      } catch (error) {
+        console.error("Error fetching latest user image on sidebar:", error);
       }
     };
 
     fetchLatestUserImage();
   }, [currentSession?.user?.id, pathname]);
 
-  // Close mobile drawer upon path changes
+  // পাথ চেঞ্জ হলে মোবাইল ড্রয়ার বন্ধ করা
   useEffect(() => {
     setIsOpen(false);
   }, [pathname]);
@@ -68,7 +68,7 @@ export default function DashboardSideBar({ session: initialSession }) {
   const rawRole = currentSession?.user?.role || "user";
   const role = rawRole.toLowerCase();
 
-  // সেশন বা ব্যাকএন্ড থেকে গেট করা অবজেক্ট থেকে ইমেজ এবং নাম নেওয়া হচ্ছে
+  // ইমেজ এবং নাম রেজোলিউশন
   const userImage =
     dbUserImage ||
     currentSession?.user?.image_url ||

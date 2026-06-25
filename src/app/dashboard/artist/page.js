@@ -3,32 +3,44 @@
 import React, { useEffect, useState } from "react";
 import { Table } from "@heroui/react";
 import { LayoutGrid } from "lucide-react";
-import { getArtPost } from "@/lib/actions/arthubdatabse";
 import { useSession } from "@/lib/auth-client";
+import { useRouter } from "next/navigation"; // 👈 ১. useRouter ইম্পোর্ট করুন
 
 const ArtistDashboardPage = () => {
   const [artworks, setArtworks] = useState([]);
   const [loading, setLoading] = useState(true);
   const { data: session } = useSession();
-  console.log(session);
+  const router = useRouter(); // 👈 ২. router ইনিশিয়ালাইজ করুন
 
   useEffect(() => {
+    const DATABASE_API_URL = process.env.NEXT_PUBLIC_URL;
+
     async function fetchData() {
-      // Current user-er session mapping logic check
-      if (!session?.user?.id) {
+      // সেশন চেক শেষ হওয়া পর্যন্ত এবং সেশন না থাকলে রিডাইরেক্ট করা
+      if (session === null) {
         setLoading(false);
+        router.push("/login"); // 👈 এখন 'router' সঠিকভাবে কাজ করবে
         return;
       }
 
-      try {
-        const data = await getArtPost();
+      if (!session?.user?.id) return;
 
-        // Match user identifier key (userId equivalent depending on db structure)
-        const filteredData = (data || []).filter(
-          (art) => String(art.userId) === String(session.user.id),
+      try {
+        setLoading(true);
+        const res = await fetch(
+          `${DATABASE_API_URL}/api/arthub/artwork?artist_id=${session.user.id}`,
+          {
+            cache: "no-store",
+          },
         );
 
-        setArtworks(filteredData);
+        if (res.ok) {
+          const result = await res.json();
+          const fetchedData = result.data || result;
+          setArtworks(Array.isArray(fetchedData) ? fetchedData : []);
+        } else {
+          console.error("Failed to fetch artworks from API");
+        }
       } catch (error) {
         console.error("Error fetching artworks:", error);
       } finally {
@@ -37,11 +49,10 @@ const ArtistDashboardPage = () => {
     }
 
     fetchData();
-  }, [session?.user?.id]); // Re-run when session load drops update triggers
+  }, [session, router]); // 👈 ডিপেন্ডেন্সি অ্যারেতে সেশন ও রাউটার যোগ করা হলো
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6 text-foreground transition-colors">
-      {/* ================= HEROUI DASHBOARD HEADER ================= */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-card p-5 border border-border rounded-xl shadow-sm">
         <div className="flex items-center gap-3">
           <div className="p-2.5 bg-muted rounded-lg text-muted-foreground hidden xs:block">
@@ -58,7 +69,6 @@ const ArtistDashboardPage = () => {
         </div>
       </div>
 
-      {/* ================= TABLE LAYER WITH RESPONSIVE CONTAINER ================= */}
       <div className="border border-border rounded-xl overflow-hidden bg-card shadow-sm text-card-foreground">
         <Table variant="secondary">
           <Table.ScrollContainer>
@@ -82,7 +92,7 @@ const ArtistDashboardPage = () => {
                 ) : artworks.length > 0 ? (
                   artworks.map((art) => (
                     <Table.Row
-                      key={art.id}
+                      key={art.id || art._id}
                       className="hover:bg-muted/40 transition-colors border-b border-border/60 last:border-0"
                     >
                       <Table.Cell className="font-medium text-foreground">
