@@ -42,8 +42,9 @@ const EditArtworkPage = () => {
     const fetchArtworkDetails = async () => {
       try {
         setLoading(true);
+        // URL ঠিক করা হয়েছে: artHub -> arthub (h ছোট হাতের)
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_URL}/api/artHub/artwork/${id}`,
+          `${process.env.NEXT_PUBLIC_URL}/api/arthub/artwork/${id}`,
           {
             cache: "no-store",
           },
@@ -58,7 +59,7 @@ const EditArtworkPage = () => {
         const finalData = data?.data || data;
 
         if (finalData) {
-          setOriginalData(finalData); // অরিজিনাল ডাটা ব্যাকআপ রাখা হলো
+          setOriginalData(finalData);
           setValue("title", finalData.title || "");
           setValue("description", finalData.description || "");
           setValue("price", finalData.price || "");
@@ -89,9 +90,8 @@ const EditArtworkPage = () => {
     try {
       setUpdating(true);
 
-      // ব্যাকএন্ডে পাঠানোর জন্য কমপ্লিট পেলোড স্ট্রাকচার তৈরি
       const payload = {
-        ...originalData, // আগের মেটাডাটা (যেমন: artist_id, artist_name, date_uploaded) ঠিক রাখা হলো
+        ...originalData,
         title: formData.title,
         description: formData.description,
         price: Number(formData.price),
@@ -100,8 +100,9 @@ const EditArtworkPage = () => {
         artist_profile_url: formData.artist_profile_url,
       };
 
+      // URL ঠিক করা হয়েছে: artHub -> arthub
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_URL}/api/artHub/artwork/${id}`,
+        `${process.env.NEXT_PUBLIC_URL}/api/arthub/artwork/${id}`,
         {
           method: "PUT",
           headers: {
@@ -113,12 +114,21 @@ const EditArtworkPage = () => {
 
       const response = await res.json();
 
-      if (res.ok && (response.success || response.modifiedCount > 0)) {
+      // কন্ডিশন আপডেট করা হয়েছে যাতে response সফল হলেই রিডাইরেক্ট লক না হয়
+      if (
+        res.ok &&
+        (response.success ||
+          response.modifiedCount > 0 ||
+          response.acknowledged)
+      ) {
         toast.success(response.message || "Artwork updated successfully!");
+
         router.refresh();
+
+        // রিডাইরেক্ট এর জন্য সেইফ টাইমআউট
         setTimeout(() => {
           router.push("/dashboard/artist/artworks");
-        }, 600);
+        }, 500);
       } else {
         toast.error(
           response.message || "No changes detected or failed to update!",

@@ -2,39 +2,65 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSession } from "@/lib/auth-client";
 
 const UserDashboardHome = () => {
-  // স্টেট ম্যানেজমেন্ট
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
-  const apiUrl = process.env.NEXT_PUBLIC_URL;
+  // 👑 আসল সেশন ডাটা বের করা হলো
+  const { data: session, isPending: sessionLoading } = useSession();
 
   useEffect(() => {
     const fetchDashboardData = async () => {
+      // সেশন লোড না হওয়া পর্যন্ত বা সেশনে ইউজার না থাকলে থামবে
+      if (sessionLoading) return;
+      if (!session?.user) {
+        setLoading(false);
+        setError(true);
+        setErrorMessage("Please login to access the dashboard.");
+        return;
+      }
+
       try {
         setLoading(true);
         setError(false);
 
-        const userResponse = await fetch(`${apiUrl}/api/arthub/user`);
-        if (!userResponse.ok) throw new Error("Failed to fetch user profile");
+      
+        const userId = session.user.id || session.user._id;
+
+        const targetUrl = `http://localhost:5000/api/arthub/user/${userId}`;
+
+        const userResponse = await fetch(targetUrl, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        });
+
+        if (!userResponse.ok) {
+          throw new Error(`Server returned status: ${userResponse.status}`);
+        }
+
         const userData = await userResponse.json();
-        console.log(userData);
-        setUser(userData);
+
+        // ব্যাকএন্ড থেকে আসা সিঙ্গেল অবজেক্ট সরাসরি সেভ হচ্ছে
+        if (userData) {
+          setUser(userData);
+        }
       } catch (err) {
-        console.error("Dashboard data fetching error:", err);
+        console.error("Dashboard error:", err);
         setError(true);
+        setErrorMessage(err.message || "Failed to fetch user profile");
       } finally {
         setLoading(false);
       }
     };
 
     fetchDashboardData();
-  }, [apiUrl]);
+  }, [session, sessionLoading]);
 
-  // লোডিং স্টেট স্ক্রিন
-  if (loading) {
+  if (sessionLoading || loading) {
     return (
       <div className="min-h-[70vh] flex flex-col items-center justify-center text-sm font-medium opacity-70">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground mb-2"></div>
@@ -43,32 +69,29 @@ const UserDashboardHome = () => {
     );
   }
 
-  // এরর স্টেট স্ক্রিন
   if (error || !user) {
     return (
       <div className="min-h-[70vh] flex flex-col items-center justify-center text-center p-4">
-        <p className="text-lg font-bold text-red-500">
-          Failed to load dashboard data
-        </p>
+        <p className="text-lg font-bold text-red-500">{errorMessage}</p>
         <p className="text-sm opacity-70 mt-1">
-          Please make sure backend server is running.
+          Please ensure backend server is running and database is connected.
         </p>
       </div>
     );
   }
 
-  // --- কারেন্ট সেশনের রোল অনুযায়ী ডাইনামিক ইমেজ ও নাম কনফিগারেশন ---
-  const currentRole = user.role?.toLowerCase() || "customer";
+  // 🛠️ ডাটাবেজের ফিল্ডের সাথে নিখুঁত ম্যাপিং
+  const currentRole = user.role?.toLowerCase() || "user";
 
-  let displayAvatar = "";
+  // আপনার ডাটাবেজে ফিল্ডের নাম 'image', তাই user.image সবার আগে চেক করা হয়েছে
+  let displayAvatar = user.image || user.avatar || user.profileImage;
   let displayTitle = user.name || "No Name Provided";
 
-  if (currentRole === "artist") {
-    displayAvatar = user.avatar || user.profileImage;
-  } else if (currentRole === "admin") {
-    displayAvatar = user.avatar || user.profileImage;
-  } else {
-    displayAvatar = user.avatar || user.profileImage;
+  if (!displayAvatar) {
+    displayAvatar =
+      currentRole === "artist"
+        ? "https://avatar.iran.liara.run/public/60"
+        : "https://avatar.iran.liara.run/public/33";
   }
 
   return (
@@ -80,57 +103,51 @@ const UserDashboardHome = () => {
           className={`px-3 py-1 text-xs font-semibold tracking-wide uppercase rounded-full border ${
             currentRole === "artist"
               ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
-              : currentRole === "buyer"
-                ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
-                : "bg-secondary text-secondary-foreground border-border"
+              : "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
           }`}
         >
-          {user.role || "Customer"} Account
+          {user.role || "User"} Account
         </span>
       </div>
 
       {/* Main Column Stack */}
       <div className="space-y-6">
-        {/* SECTION 1: Dynamic Profile Block */}
         <section className="bg-card text-card-foreground p-6 rounded-2xl shadow-sm border border-border flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
-            {/* ডাইনামিক ইমেজ ফ্রেম */}
             <div
-              className={`relative w-16 h-16 shrink-0 bg-muted rounded-full overflow-hidden p-0.5 ring-2 ${
-                currentRole === "artist"
-                  ? "ring-amber-500/40"
-                  : currentRole === "buyer"
-                    ? "ring-emerald-500/40"
-                    : "ring-foreground/10"
+              className={`relative w-16 h-16 shrink-0 bg-muted rounded-full overflow-hidden p-0.5 ring-2 transition-all duration-300 ${
+                currentRole === "artist" ? "ring-amber-500" : "ring-emerald-500"
               }`}
             >
               <img
                 src={displayAvatar}
                 alt={displayTitle}
                 className="w-full h-full object-cover rounded-full shadow-sm"
-                loading="lazy"
               />
             </div>
 
-            {/* ডাইনামিক নাম ও ইমেইল */}
             <div className="min-w-0">
               <div className="flex items-center justify-center sm:justify-start gap-2">
                 <h2 className="text-lg font-semibold truncate">
                   {displayTitle}
                 </h2>
-                {currentRole === "artist" && (
-                  <span className="text-[10px] bg-amber-500 text-white px-1.5 py-0.5 rounded font-bold uppercase">
-                    Pro
-                  </span>
-                )}
+                <span
+                  className={`text-[10px] text-white px-1.5 py-0.5 rounded font-bold uppercase tracking-wide ${
+                    currentRole === "artist" ? "bg-amber-500" : "bg-emerald-500"
+                  }`}
+                >
+                  {user.role || "user"}
+                </span>
               </div>
-              <p className="text-sm opacity-70 truncate">{user.email}</p>
+              <p className="text-sm opacity-70 truncate">
+                {user.email || "No Email Provided"}
+              </p>
             </div>
           </div>
 
           <Link
             href="/dashboard/profile/edit"
-            className="w-full sm:w-auto text-center px-4 py-2 text-sm font-medium bg-secondary text-secondary-foreground hover:opacity-90 rounded-xl transition-opacity duration-200"
+            className="w-full sm:w-auto text-center px-4 py-2 text-sm font-medium bg-secondary text-secondary-foreground hover:opacity-90 rounded-xl"
           >
             Edit Profile
           </Link>

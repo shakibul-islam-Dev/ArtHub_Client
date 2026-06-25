@@ -22,7 +22,8 @@ const NavigationBar = () => {
   const pathname = usePathname();
   const router = useRouter();
 
-  const { data: session } = useSession();
+  // useSession থেকে সেশন ডাটা এবং লোডিং অবস্থা (isPending) নেওয়া হয়েছে
+  const { data: session, isPending } = useSession();
 
   if (pathname.startsWith("/dashboard/")) {
     return null;
@@ -48,7 +49,6 @@ const NavigationBar = () => {
   const userName = session?.user?.name;
   const userEmail = session?.user?.email;
 
-  // 🛠️ ডাটাবেজ বা সেশনের সম্ভাব্য সব ইমেজ ফিল্ড একসাথে হ্যান্ডেল করা হলো
   const userImageUrl =
     session?.user?.image || session?.user?.image_url || session?.user?.picture;
   const userInitial = userName?.trim().charAt(0).toUpperCase() || "U";
@@ -91,12 +91,13 @@ const NavigationBar = () => {
             {/* Dark Mode Toggle */}
             <ModeToggle />
 
-            {session && (
+            {/* সেশন লোড হওয়া পর্যন্ত একটি ছোট প্লেসহোল্ডার দেখানো হচ্ছে */}
+            {isPending ? (
+              <div className="w-8 h-8 rounded-full bg-muted animate-pulse" />
+            ) : session ? (
               <Dropdown>
                 <Dropdown.Trigger className="rounded-full cursor-pointer focus:outline-none">
                   <div>
-                    {" "}
-                    {/* Trigger এরর এড়াতে div র‍্যাপার যোগ করা হয়েছে */}
                     <Avatar
                       src={userImageUrl || undefined}
                       name={userInitial}
@@ -179,9 +180,7 @@ const NavigationBar = () => {
                   </Dropdown.Menu>
                 </Dropdown.Popover>
               </Dropdown>
-            )}
-
-            {!session && (
+            ) : (
               <div className="flex items-center space-x-3">
                 <Link
                   href="/login"
@@ -232,7 +231,9 @@ const NavigationBar = () => {
 
           <hr className="border-border/50 my-2" />
 
-          {session ? (
+          {isPending ? (
+            <div className="h-10 w-full bg-muted animate-pulse rounded-md" />
+          ) : session ? (
             <div className="space-y-3 px-3">
               <div className="flex items-center gap-3 py-2">
                 <Avatar

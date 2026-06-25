@@ -15,13 +15,20 @@ import {
 import Image from "next/image";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
+import { Avatar } from "@heroui/react";
 
 export default function AddProductForm({ artist }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
   const router = useRouter();
-  const DATABASE_API_URL = process.env.NEXT_PUBLIC_URL;
+
+  const DATABASE_API_URL = process.env.NEXT_PUBLIC_URL || "";
   const IMGBB_API_KEY = process.env.NEXT_PUBLIC_IMAGE_UPLOAD_API_KEY;
+
+  const currentArtistName = artist?.name || "Unknown Artist";
+  const currentArtistImage = artist?.image || "";
+  // সেশন থেকে আসা আইডি
+  const currentArtistId = artist?.id || artist?._id || "";
 
   const {
     register,
@@ -39,7 +46,6 @@ export default function AddProductForm({ artist }) {
     },
   });
 
-  // ইমেজ চেঞ্জ হ্যান্ডেলার
   const handleImageChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -51,7 +57,6 @@ export default function AddProductForm({ artist }) {
     }
   };
 
-  // প্রিভিউ রিমুভ করার হ্যান্ডেলার
   const handleRemovePreview = () => {
     setImagePreview(null);
     setValue("image", null);
@@ -59,31 +64,22 @@ export default function AddProductForm({ artist }) {
 
   const onSubmit = async (data) => {
     setIsSubmitting(true);
-    let isSuccess = false;
 
     try {
       const file = data.image?.[0];
       if (!file) {
-        toast.error("please upload an image!");
+        toast.error("Please upload an image!");
         setIsSubmitting(false);
         return;
       }
 
-      if (!artist) {
-        toast.error("Artist information is missing!");
-        setIsSubmitting(false);
-        return;
-      }
-
+      // ১. ImgBB-তে ইমেজ আপলোড
       const formData = new FormData();
       formData.append("image", file);
 
       const res = await fetch(
         `https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`,
-        {
-          method: "POST",
-          body: formData,
-        },
+        { method: "POST", body: formData },
       );
 
       if (!res.ok) throw new Error("Image upload failed");
@@ -91,24 +87,25 @@ export default function AddProductForm({ artist }) {
       const imgData = await res.json();
       const imageUrl = imgData.data.url;
 
-      const currentArtistId =
-        artist.id || artist._id || artist.user?.id || artist.user?._id;
-      const currentArtistName =
-        artist.name || artist.username || artist.user?.name || "Unknown Artist";
-
+      // ৫টি ম্যান্ডেটরি ফিল্ড + ফ্রন্টএন্ডে থাকা সেশন ও বাকি ডাটা
       const payload = {
+        // ৫টি আবশ্যক ফিল্ড
+        title: String(data.title).trim(),
+        image_url: String(imageUrl).trim(),
+        description: String(data.description).trim(),
+        price: Number(data.price),
+        category: String(data.category).trim(),
+
+        // বাকি প্রয়োজনীয় ডেটা (ফ্রন্টএন্ড থেকেই একবারে পাঠানো হচ্ছে)
         artist_id: currentArtistId,
-        title: data.title,
-        image_url: imageUrl,
-        artist_name: currentArtistName,
-        artist_profile_url:
-          artist.image || artist.profile_url || artist.user?.image || "",
-        description: data.description,
-        price: parseFloat(data.price),
-        category: data.category,
+        artist_name: String(currentArtistName).trim(),
+        artist_profile_url: String(currentArtistImage).trim(),
+        isSold: false,
         date_uploaded: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
       };
 
+      // ২. ডাটাবেজ API কল
       const response = await fetch(`${DATABASE_API_URL}/api/arthub/artwork`, {
         method: "POST",
         headers: {
@@ -117,27 +114,35 @@ export default function AddProductForm({ artist }) {
         body: JSON.stringify(payload),
       });
 
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error("--- BACKEND ERROR ---", errorData);
+        toast.error(
+          errorData?.message ||
+            `Failed to save product! (Status: ${response.status})`,
+        );
+        setIsSubmitting(false);
+        return;
+      }
       const dbRes = await response.json();
 
-      if (response.ok && dbRes?.success) {
+      // ব্যাকএন্ড যদি সরাসরি ডাটা অবজেক্ট বা insertedId/success যেকোনো একটি পাঠায়
+      if (dbRes?.success || dbRes?.insertedId || dbRes?._id || dbRes?.title) {
         toast.success(dbRes.message || "Successfully Saved to Database!");
         reset();
         setImagePreview(null);
-        isSuccess = true;
-        setIsSubmitting(false);
-        if (isSuccess) {
-          setTimeout(() => {
-            router.push("/dashboard/artist/artworks");
-            router.refresh();
-          }, 500);
-        }
+
+        setTimeout(() => {
+          router.push("/dashboard/artist/artworks");
+          router.refresh();
+        }, 500);
       } else {
-        toast.error(dbRes?.message || "Database-e save korte somossa hoyeche!");
-        setIsSubmitting(false);
+        toast.error(dbRes?.message || "Database saving failed!");
       }
     } catch (error) {
-      console.error("Error submitting form:", error);
-      toast.error("Something went wrong! Please try again.");
+      console.error("Client Error:", error);
+      toast.error("Something went wrong! Connection failed.");
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -145,17 +150,37 @@ export default function AddProductForm({ artist }) {
   return (
     <div className="max-w-2xl mx-auto bg-card text-card-foreground border border-border rounded-xl p-6 shadow-sm my-8 transition-colors">
       {/* Header */}
-      <div className="flex items-center gap-3 border-b border-border pb-4 mb-6">
-        <div className="p-2 bg-muted text-muted-foreground rounded-lg">
-          <UploadCloud size={24} />
+      <div className="flex items-center justify-between border-b border-border pb-4 mb-6 flex-wrap gap-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-muted text-muted-foreground rounded-lg">
+            <UploadCloud size={24} />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-foreground">
+              Add New Artwork / Product
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              Fill in the details below to upload your items.
+            </p>
+          </div>
         </div>
-        <div>
-          <h2 className="text-xl font-bold text-foreground">
-            Add New Artwork / Product
-          </h2>
-          <p className="text-xs text-muted-foreground">
-            Fill in the details below to upload your items.
-          </p>
+
+        {/* Artist Badge */}
+        <div className="flex items-center gap-2 bg-muted/50 px-3 py-1.5 rounded-full border border-border/60">
+          <Avatar
+            src={currentArtistImage || undefined}
+            name={currentArtistName.charAt(0).toUpperCase()}
+            size="sm"
+            className="w-6 h-6 text-[10px] bg-primary text-primary-foreground font-semibold"
+          />
+          <div className="flex flex-col">
+            <span className="text-[10px] text-muted-foreground leading-none font-medium">
+              Posting as
+            </span>
+            <span className="text-xs font-bold text-foreground leading-tight truncate max-w-[120px]">
+              {currentArtistName}
+            </span>
+          </div>
         </div>
       </div>
 
