@@ -42,27 +42,28 @@ const EditArtworkPage = () => {
     const fetchArtworkDetails = async () => {
       try {
         setLoading(true);
-        // URL ঠিক করা হয়েছে: artHub -> arthub (h ছোট হাতের)
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_URL}/api/arthub/artwork/${id}`,
-          {
-            cache: "no-store",
-          },
+          { cache: "no-store" },
         );
 
-        if (!res.ok) throw new Error("Failed to fetch data");
+        if (!res.ok) throw new Error("Failed to fetch artwork data");
 
         const data = await res.json();
-
         if (!isMounted) return;
 
         const finalData = data?.data || data;
 
         if (finalData) {
           setOriginalData(finalData);
+
+          // ফর্ম ভ্যালু সেট করা (প্রাইস স্ট্রিংয়ে কনভার্ট করা হয়েছে ইনপুট ফিল্ড ক্র্যাশ এড়াতে)
           setValue("title", finalData.title || "");
           setValue("description", finalData.description || "");
-          setValue("price", finalData.price || "");
+          setValue(
+            "price",
+            finalData.price !== undefined ? String(finalData.price) : "",
+          );
           setValue("category", finalData.category || "");
           setValue("image_url", finalData.image_url || "");
           setValue("artist_profile_url", finalData.artist_profile_url || "");
@@ -90,17 +91,18 @@ const EditArtworkPage = () => {
     try {
       setUpdating(true);
 
+      // পূর্বের মেটাডেটা অক্ষুণ্ণ রেখে শুধু ফর্মের ডেটা মডিফাই করা
       const payload = {
         ...originalData,
-        title: formData.title,
-        description: formData.description,
+        title: String(formData.title).trim(),
+        description: String(formData.description).trim(),
         price: Number(formData.price),
-        category: formData.category,
-        image_url: formData.image_url,
-        artist_profile_url: formData.artist_profile_url,
+        category: String(formData.category).trim(),
+        image_url: String(formData.image_url).trim(),
+        artist_profile_url: String(formData.artist_profile_url).trim(),
+        updatedAt: new Date().toISOString(), // আপডেট টাইমস্ট্যাম্প
       };
 
-      // URL ঠিক করা হয়েছে: artHub -> arthub
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_URL}/api/arthub/artwork/${id}`,
         {
@@ -114,18 +116,17 @@ const EditArtworkPage = () => {
 
       const response = await res.json();
 
-      // কন্ডিশন আপডেট করা হয়েছে যাতে response সফল হলেই রিডাইরেক্ট লক না হয়
+      // এক্সপ্রেস এবং মঙ্গোডিবি রেসপন্স অবজেক্টের স্ট্রং এবং সেফ কন্ডিশন চেক
       if (
         res.ok &&
         (response.success ||
           response.modifiedCount > 0 ||
-          response.acknowledged)
+          response.acknowledged ||
+          response._id)
       ) {
         toast.success(response.message || "Artwork updated successfully!");
-
         router.refresh();
 
-        // রিডাইরেক্ট এর জন্য সেইফ টাইমআউট
         setTimeout(() => {
           router.push("/dashboard/artist/artworks");
         }, 500);
@@ -155,6 +156,7 @@ const EditArtworkPage = () => {
 
   return (
     <div className="p-6 md:p-8 max-w-3xl mx-auto space-y-6 text-foreground transition-colors">
+      {/* Header */}
       <div className="flex items-center gap-4 border-b border-border pb-4">
         <Link href="/dashboard/artist/artworks" passHref>
           <Button
@@ -174,6 +176,7 @@ const EditArtworkPage = () => {
         </div>
       </div>
 
+      {/* Form */}
       <form
         onSubmit={handleSubmit(onFormSubmit)}
         className="space-y-5 bg-card text-card-foreground border border-border p-6 rounded-xl shadow-sm"
@@ -207,20 +210,22 @@ const EditArtworkPage = () => {
             <label className="text-sm font-semibold text-foreground">
               Category *
             </label>
-            <select
-              className={`w-full px-3 py-2 border rounded-lg text-sm bg-transparent text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary [&>option]:bg-[hsl(var(--card))] [&>option]:text-[hsl(var(--foreground))] appearance-none ${
-                errors.category ? "border-destructive" : "border-border"
-              }`}
-              {...register("category", {
-                required: "Please select a category!",
-              })}
-            >
-              <option value="">Select Category</option>
-              <option value="painting">Painting</option>
-              <option value="digital-art">Digital Art</option>
-              <option value="sculpture">Sculpture</option>
-              <option value="photography">Photography</option>
-            </select>
+            <div className="relative">
+              <select
+                className={`w-full px-3 py-2 border rounded-lg text-sm bg-transparent text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary [&>option]:bg-[hsl(var(--card))] [&>option]:text-[hsl(var(--foreground))] appearance-none ${
+                  errors.category ? "border-destructive" : "border-border"
+                }`}
+                {...register("category", {
+                  required: "Please select a category!",
+                })}
+              >
+                <option value="">Select Category</option>
+                <option value="painting">Painting</option>
+                <option value="digital-art">Digital Art</option>
+                <option value="sculpture">Sculpture</option>
+                <option value="photography">Photography</option>
+              </select>
+            </div>
             {errors.category && (
               <span className="text-xs text-destructive font-medium">
                 {errors.category.message}
@@ -244,7 +249,7 @@ const EditArtworkPage = () => {
               }`}
               {...register("price", {
                 required: "Price is required!",
-                min: { value: 1, message: "Price must be greater than $1" },
+                min: { value: 0, message: "Price cannot be negative" },
               })}
             />
             {errors.price && (
@@ -314,7 +319,7 @@ const EditArtworkPage = () => {
           )}
         </div>
 
-        {/* সাবমিট বাটন */}
+        {/* Action Button */}
         <div className="flex justify-end pt-2">
           <Button
             type="submit"

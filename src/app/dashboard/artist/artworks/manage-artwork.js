@@ -20,7 +20,6 @@ const ManageArtWorks = ({ userData }) => {
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState(null);
 
-  // মোডাল এবং অ্যাক্টিভ ডাটা ট্র্যাকিং স্টেট
   const [modalType, setModalType] = useState(null);
   const [activeArt, setActiveArt] = useState(null);
 
@@ -31,26 +30,19 @@ const ManageArtWorks = ({ userData }) => {
   useEffect(() => {
     const fetchArtworks = async () => {
       if (!artistId) return;
-
       try {
         setLoading(true);
-        // আপনার এক্সপ্রেস ব্যাকএন্ড এন্ডপয়েন্ট থেকে ডাটা আনা হচ্ছে
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_URL}/api/arthub/artwork`,
           { cache: "no-store" },
         );
         const allArtworks = await res.json();
-
-        // ব্যাকএন্ড যদি { success: true, data: [...] } ফরম্যাটে পাঠায় তা হ্যান্ডেল করা
         const targetData = Array.isArray(allArtworks)
           ? allArtworks
           : allArtworks.data || [];
-
-        // কারেন্ট আর্টিস্টের আইডি দিয়ে ফিল্টার করা হচ্ছে
         const userSpecificArt = targetData.filter(
           (art) => art.artist_id === artistId,
         );
-
         setArtworks(userSpecificArt);
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -59,7 +51,6 @@ const ManageArtWorks = ({ userData }) => {
         setLoading(false);
       }
     };
-
     fetchArtworks();
   }, [artistId]);
 
@@ -68,7 +59,6 @@ const ManageArtWorks = ({ userData }) => {
     setActiveArt(null);
   };
 
-  // ডিলিট কনফার্মেশন মোডালের অ্যাকশন
   const handleDelete = async (e) => {
     if (e) {
       e.preventDefault();
@@ -83,10 +73,9 @@ const ManageArtWorks = ({ userData }) => {
 
     try {
       setDeletingId(targetId);
-
-      // এক্সপ্রেস ব্যাকএন্ডের ডিলিট এন্ডপয়েন্টে সরাসরি হিট করা হচ্ছে
+      // এখানে URL টি ঠিক করে দেওয়া হয়েছে
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_URL}/api/artHub/artwork/${targetId}`,
+        `${process.env.NEXT_PUBLIC_URL}/api/arthub/artwork/${targetId}`,
         {
           method: "DELETE",
         },
@@ -96,13 +85,10 @@ const ManageArtWorks = ({ userData }) => {
 
       if (response.ok && (result.success || result.deletedCount > 0)) {
         toast.success(result.message || "Artwork deleted successfully");
-        // স্টেট থেকে রিমুভ করে UI আপডেট করা হচ্ছে
         setArtworks((prev) => prev.filter((art) => art._id !== targetId));
         closeModal();
       } else {
-        toast.error(
-          result?.message || "Failed to delete artwork from database!",
-        );
+        toast.error(result?.message || "Failed to delete artwork!");
       }
     } catch (error) {
       console.error("Delete error:", error);
@@ -125,7 +111,6 @@ const ManageArtWorks = ({ userData }) => {
 
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8 text-foreground transition-colors">
-      {/* Header */}
       <div className="flex justify-between items-center border-b border-border pb-5">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">
@@ -147,7 +132,6 @@ const ManageArtWorks = ({ userData }) => {
         </Link>
       </div>
 
-      {/* Grid Layout */}
       {artworks.length === 0 ? (
         <div className="text-center py-20 border-2 border-dashed border-border rounded-2xl bg-muted/10 backdrop-blur-sm">
           <ImageIcon
@@ -156,9 +140,6 @@ const ManageArtWorks = ({ userData }) => {
           />
           <p className="text-muted-foreground font-medium text-lg">
             There are no artworks found
-          </p>
-          <p className="text-xs text-muted-foreground/70 mt-1">
-            Click the button above to showcase your first masterpiece.
           </p>
         </div>
       ) : (
@@ -173,11 +154,10 @@ const ManageArtWorks = ({ userData }) => {
                   src={art.image_url || "/placeholder.jpg"}
                   fill
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
-                  alt={art.title || "Artwork"}
+                  alt={art.title}
                   unoptimized
                 />
               </div>
-
               <CardContent className="p-4 flex flex-col flex-1 justify-between gap-4">
                 <div>
                   <h3
@@ -195,9 +175,7 @@ const ManageArtWorks = ({ userData }) => {
                     </span>
                   </div>
                 </div>
-
                 <div className="grid grid-cols-2 gap-2 border-t border-border pt-3">
-                  {/* Edit Button */}
                   <Button
                     variant="bordered"
                     size="sm"
@@ -209,8 +187,6 @@ const ManageArtWorks = ({ userData }) => {
                   >
                     <FolderEdit size={14} /> Edit
                   </Button>
-
-                  {/* Delete Button */}
                   <Button
                     color="danger"
                     variant="flat"
@@ -236,13 +212,11 @@ const ManageArtWorks = ({ userData }) => {
         </div>
       )}
 
-      {/* HeroUI Custom Confirmation Modal */}
       <Modal isOpen={modalType !== null} onClose={closeModal}>
         <Modal.Backdrop className="backdrop-blur-md bg-overlay/30">
           <Modal.Container>
             <Modal.Dialog className="sm:max-w-[420px] border border-divider bg-background text-foreground shadow-2xl rounded-2xl">
               <Modal.CloseTrigger onClick={closeModal} />
-
               <Modal.Header className="flex gap-3 items-center">
                 <Modal.Icon
                   className="rounded-full p-2.5 bg-default-100 text-default-600"
@@ -262,7 +236,6 @@ const ManageArtWorks = ({ userData }) => {
                     : "Confirm Modification"}
                 </Modal.Heading>
               </Modal.Header>
-
               <Modal.Body>
                 <p className="text-muted-foreground text-sm leading-relaxed">
                   {modalType === "delete"
@@ -270,7 +243,6 @@ const ManageArtWorks = ({ userData }) => {
                     : `Do you want to proceed to the editing dashboard for "${activeArt?.title}"?`}
                 </p>
               </Modal.Body>
-
               <Modal.Footer className="flex gap-2.5 justify-end">
                 <Button
                   variant="light"
@@ -280,7 +252,6 @@ const ManageArtWorks = ({ userData }) => {
                 >
                   Cancel
                 </Button>
-
                 {modalType === "delete" ? (
                   <Button
                     color="danger"

@@ -241,9 +241,9 @@ export default function ArtworkDetail() {
   const artImage = artwork.imageUrl || artwork.image_url || artwork.image;
   const artistName =
     artwork.artist?.name || artwork.artist || artwork.artistName;
+
   const artistId = artwork.artist?._id || artwork.artist;
 
-  // কারেন্ট সেশন ইউজার আইডি মিলিয়ে ওনারশিপ চেক
   const isArtistOwner = session?.user?.id === artistId;
 
   // 🛠️ মেইন কন্ডিশন: লগইন করা ইউজারের রোল যদি "artist" হয়, তবে পারচেজ বাটন ইনঅ্যাক্টিভ হবে
