@@ -20,13 +20,80 @@ import { Button } from "@/components/ui/button";
 const NavigationBar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [imageError, setImageError] = useState(false);
+
+  // ডাটাবেজ থেকে রিয়েল-টাইম ডেটা সিঙ্ক করার জন্য স্টেট
+  const [dbUserName, setDbUserName] = useState(null);
+  const [dbUserImage, setDbUserImage] = useState(null);
+  const [dbUserPlan, setDbUserPlan] = useState("Free"); // ডিফল্ট 'Free' রাখা হলো
+
   const pathname = usePathname();
   const router = useRouter();
 
   const { data: session, isPending } = useSession();
+  const role = session?.user?.role?.toLowerCase(); // নিরাপদভাবে রোল রিড করার জন্য
 
-  const userImageUrl =
-    session?.user?.image || session?.user?.image_url || session?.user?.picture;
+  // ডাটাবেজ থেকে লেটেস্ট তথ্য (নাম, ইমেজ, সাবস্ক্রিপশন প্ল্যান) ফেচ করার ইফেক্ট
+  useEffect(() => {
+    const fetchLatestUserData = async () => {
+      if (!session?.user?.id || !session?.user?.email) return;
+
+      const baseUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:5000";
+
+      try {
+        // ১. ইউজারের বেসিক প্রোফাইল ডেটা আনা (নাম, ছবি) - এটি সবার জন্যই চলবে
+        const userRes = await fetch(
+          `${baseUrl}/api/arthub/user/${session.user.id}`,
+        );
+        if (userRes.ok) {
+          const data = await userRes.json();
+          const userData = data?.success ? data.data : data;
+
+          const fetchedImage = userData?.image_url || userData?.image;
+          if (fetchedImage) setDbUserImage(fetchedImage);
+
+          const fetchedName = userData?.name || userData?.username;
+          if (fetchedName) setDbUserName(fetchedName);
+        }
+
+        // 🚀 ফিক্স: ইউজার আর্টিস্ট বা এডমিন হলে সাবস্ক্রিপশন চেক করার দরকার নেই
+        if (role === "artist" || role === "admin") {
+          setDbUserPlan(role); // প্ল্যানের জায়গায় আর্টিস্ট/এডমিন টেক্সটই সেট করে দেওয়া হলো
+          return;
+        }
+
+        // ২. নতুন ডেডিকেটেড সাবস্ক্রিপশন এপিআই থেকে লাইভ প্ল্যান আনা (শুধুমাত্র জেনারেল ইউজারদের জন্য)
+        const subRes = await fetch(
+          `${baseUrl}/api/arthub/subscriptions/subscriptions/${session.user.email}`,
+        );
+        if (subRes.ok) {
+          const subData = await subRes.json();
+          // যদি সাবস্ক্রিপশন স্ট্যাটাস 'complete' থাকে তবে ডাটাবেজের planName সেট হবে
+          if (subData?.success && subData?.data?.status === "complete") {
+            setDbUserPlan(subData.data.planName || "Free");
+          } else {
+            setDbUserPlan("Free");
+          }
+        } else {
+          setDbUserPlan("Free"); // এপিআই ৪MD বা কোনো এরর দিলে ফ্রী প্ল্যান দেখাবে
+        }
+      } catch (error) {
+        console.error(
+          "Error fetching latest user or subscription data on navbar:",
+          error,
+        );
+      }
+    };
+
+    fetchLatestUserData();
+  }, [session?.user?.id, session?.user?.email, pathname, role]); // ডিপেন্ডেন্সিতে role অ্যাড করা হলো
+
+  // সেশন ইমেজ চেঞ্জ হলে এরর রিসেট করা
+  const rawImageUrl =
+    dbUserImage ||
+    session?.user?.image ||
+    session?.user?.image_url ||
+    session?.user?.picture;
+  const userImageUrl = rawImageUrl?.trim();
 
   useEffect(() => {
     setImageError(false);
@@ -48,13 +115,14 @@ const NavigationBar = () => {
     });
   };
 
-  const role = session?.user?.role;
-  const dashboardPath = `/dashboard/${role}`;
+  const dashboardPath = `/dashboard/${session?.user?.role}`;
   const settingsPath = `/settings`;
   const isActive = (path) => pathname === path;
 
-  const userName = session?.user?.name;
+  // ফাইনাল ডাটা রেজোলিউশন
+  const userName = dbUserName || session?.user?.name || "User";
   const userEmail = session?.user?.email;
+  const userPlan = dbUserPlan; // নতুন আপগ্রেডেড লাইভ প্ল্যান (free, pro, premium, artist)
   const userInitial = userName?.trim().charAt(0).toUpperCase() || "U";
 
   return (
@@ -91,16 +159,19 @@ const NavigationBar = () => {
             >
               Browse
             </Link>
-            <Link
-              href="/plans"
-              className={
-                isActive("/plans")
-                  ? "text-primary font-bold"
-                  : "text-muted-foreground hover:text-primary transition"
-              }
-            >
-              Plans
-            </Link>
+
+            {role !== "artist" && (
+              <Link
+                href="/plans"
+                className={
+                  isActive("/plans")
+                    ? "text-primary font-bold"
+                    : "text-muted-foreground hover:text-primary transition"
+                }
+              >
+                Plans
+              </Link>
+            )}
 
             {/* Dark Mode Toggle */}
             <ModeToggle />
@@ -111,12 +182,9 @@ const NavigationBar = () => {
               <Dropdown>
                 <Dropdown.Trigger className="rounded-full cursor-pointer focus:outline-none">
                   <div>
-                    {/* 🎯 ফিক্সড: চাইল্ড বাদ দিয়ে HeroUI এর ডিফল্ট fallback ব্যবহার করা হয়েছে */}
                     <Avatar
                       src={
-                        userImageUrl?.trim() && !imageError
-                          ? userImageUrl.trim()
-                          : undefined
+                        userImageUrl && !imageError ? userImageUrl : undefined
                       }
                       fallback={
                         <span className="font-semibold text-sm">
@@ -132,12 +200,9 @@ const NavigationBar = () => {
                 <Dropdown.Popover className="bg-popover text-popover-foreground border border-border">
                   <div className="px-3 pt-3 pb-2 border-b border-border/50">
                     <div className="flex items-center gap-3">
-                      {/* 🎯 ফিক্সড পপওভার অ্যাভাটার */}
                       <Avatar
                         src={
-                          userImageUrl?.trim() && !imageError
-                            ? userImageUrl.trim()
-                            : undefined
+                          userImageUrl && !imageError ? userImageUrl : undefined
                         }
                         fallback={
                           <span className="font-medium text-xs">
@@ -148,14 +213,17 @@ const NavigationBar = () => {
                         className="bg-primary text-primary-foreground border border-border"
                         onError={() => setImageError(true)}
                       />
-                      <div className="flex flex-col gap-0">
+                      <div className="flex flex-col gap-0.5 min-w-0">
                         {userName && (
-                          <p className="text-sm leading-5 font-semibold">
-                            {userName}
+                          <p className="text-sm leading-5 font-semibold flex items-center gap-2">
+                            <span className="truncate">{userName}</span>
+                            <span className="text-[10px] text-primary font-medium uppercase tracking-wide bg-primary/10 px-1.5 py-0.5 rounded shrink-0">
+                              {userPlan}
+                            </span>
                           </p>
                         )}
                         {userEmail && (
-                          <p className="text-xs leading-none text-muted-foreground">
+                          <p className="text-xs leading-none text-muted-foreground truncate">
                             {userEmail}
                           </p>
                         )}
@@ -258,6 +326,16 @@ const NavigationBar = () => {
             Browse
           </Link>
 
+          {role !== "artist" && (
+            <Link
+              href="/plans"
+              onClick={() => setIsOpen(false)}
+              className={`block px-3 py-2 rounded-md font-medium ${isActive("/plans") ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-muted"}`}
+            >
+              Plans
+            </Link>
+          )}
+
           <hr className="border-border/50 my-2" />
 
           {isPending ? (
@@ -265,13 +343,8 @@ const NavigationBar = () => {
           ) : session ? (
             <div className="space-y-3 px-3">
               <div className="flex items-center gap-3 py-2">
-                {/* 🎯 ফিক্সড মোবাইল অ্যাভাটার */}
                 <Avatar
-                  src={
-                    userImageUrl?.trim() && !imageError
-                      ? userImageUrl.trim()
-                      : undefined
-                  }
+                  src={userImageUrl && !imageError ? userImageUrl : undefined}
                   showFallback
                   fallback={
                     <span className="font-bold text-base">{userInitial}</span>
@@ -279,12 +352,19 @@ const NavigationBar = () => {
                   className="w-10 h-10 bg-primary text-primary-foreground border border-border"
                   onError={() => setImageError(true)}
                 />
-                <div>
+                <div className="min-w-0 flex-1">
                   {userName && (
-                    <p className="text-sm font-semibold">{userName}</p>
+                    <p className="text-sm font-semibold flex items-center gap-2">
+                      <span className="truncate">{userName}</span>
+                      <span className="text-[9px] text-primary font-bold uppercase bg-primary/10 px-1 rounded shrink-0">
+                        {userPlan}
+                      </span>
+                    </p>
                   )}
                   {userEmail && (
-                    <p className="text-xs text-muted-foreground">{userEmail}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {userEmail}
+                    </p>
                   )}
                 </div>
               </div>

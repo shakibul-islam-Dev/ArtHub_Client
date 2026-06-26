@@ -1,15 +1,18 @@
 "use client";
 import React, { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Upload } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { toast } from "react-toastify";
 
 const RegistrationPage = () => {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [imagePreview, setImagePreview] = useState(null);
 
   const {
     register,
@@ -24,14 +27,71 @@ const RegistrationPage = () => {
 
   const password = watch("password");
 
-  // Form submission handler
+  const { onChange: onImageChange, ...restImageRegister } = register("image");
+
+  const handleImageSelect = (e) => {
+    onImageChange(e);
+    const file = e.target.files?.[0];
+    if (file) {
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  const uploadToImgBB = async (file) => {
+    const apiKey = process.env.NEXT_PUBLIC_IMAGE_UPLOAD_API_KEY;
+    if (!apiKey) {
+      console.error("ImgBB API key is missing. Check your .env file.");
+      return null;
+    }
+
+    const formData = new FormData();
+    formData.append("image", file);
+
+    try {
+      const response = await fetch(
+        `https://api.imgbb.com/1/upload?key=${apiKey}`,
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
+
+      const resData = await response.json();
+      if (resData.success) {
+        return resData.data.url;
+      } else {
+        console.error("ImgBB Upload Error:", resData.error);
+        return null;
+      }
+    } catch (err) {
+      console.error("Failed to upload image to ImgBB:", err);
+      return null;
+    }
+  };
+
   const onSubmit = async (formData) => {
     setLoading(true);
+    let imageUrl = "";
+
     try {
+      if (formData.image && formData.image.length > 0) {
+        const file = formData.image[0];
+        toast.info("Uploading profile picture...");
+        const uploadedUrl = await uploadToImgBB(file);
+
+        if (!uploadedUrl) {
+          toast.error("Image upload failed. Registration aborted.");
+          setLoading(false);
+          return;
+        }
+        imageUrl = uploadedUrl;
+      }
+
       const { data, error } = await authClient.signUp.email({
         email: formData.email,
         password: formData.password,
         name: formData.username,
+        image: imageUrl || undefined,
         role: formData.role,
         callbackURL: "/",
       });
@@ -41,9 +101,12 @@ const RegistrationPage = () => {
       } else {
         console.log(data);
         toast.success("Registration successful!");
+        router.push("/"); // রিডাইরেক্ট ফিক্স
+        router.refresh();
       }
     } catch (error) {
       console.error("An Unexpected error during registration:", error);
+      toast.error("An unexpected error occurred.");
     } finally {
       setLoading(false);
     }
@@ -78,6 +141,11 @@ const RegistrationPage = () => {
                   : "border-gray-300 dark:border-gray-600 focus:ring-blue-500"
               } bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md shadow-sm p-2 focus:outline-none focus:ring-2`}
             />
+            {errors.username && (
+              <p className="text-red-500 text-xs mt-1">
+                {errors.username.message}
+              </p>
+            )}
           </div>
 
           {/* Email */}
@@ -94,6 +162,43 @@ const RegistrationPage = () => {
                   : "border-gray-300 dark:border-gray-600 focus:ring-blue-500"
               } bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md shadow-sm p-2 focus:outline-none focus:ring-2`}
             />
+            {errors.email && (
+              <p className="text-red-500 text-xs mt-1">
+                {errors.email.message}
+              </p>
+            )}
+          </div>
+
+          {/* Profile Image Upload */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Profile Picture
+            </label>
+            <div className="flex items-center justify-center w-full">
+              <label className="flex flex-col items-center justify-center w-full h-28 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors overflow-hidden">
+                {imagePreview ? (
+                  <img
+                    src={imagePreview}
+                    alt="Profile Preview"
+                    className="w-full h-full object-contain bg-gray-100 dark:bg-gray-800"
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center pt-3 pb-4">
+                    <Upload className="w-6 h-6 mb-1 text-gray-500 dark:text-gray-400" />
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Click to upload avatar
+                    </p>
+                  </div>
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  {...restImageRegister}
+                  onChange={handleImageSelect}
+                />
+              </label>
+            </div>
           </div>
 
           {/* Password */}
@@ -106,7 +211,10 @@ const RegistrationPage = () => {
                 type={showPassword ? "text" : "password"}
                 {...register("password", {
                   required: "Password is required",
-                  minLength: 6,
+                  minLength: {
+                    value: 6,
+                    message: "Minimum 6 characters required",
+                  },
                 })}
                 className="mt-1 block w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md shadow-sm p-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -118,6 +226,11 @@ const RegistrationPage = () => {
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
+            {errors.password && (
+              <p className="text-red-500 text-xs mt-1">
+                {errors.password.message}
+              </p>
+            )}
           </div>
 
           {/* Confirm Password */}
@@ -143,6 +256,11 @@ const RegistrationPage = () => {
                 {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
+            {errors.confirmPassword && (
+              <p className="text-red-500 text-xs mt-1">
+                {errors.confirmPassword.message}
+              </p>
+            )}
           </div>
 
           {/* Role Selection */}

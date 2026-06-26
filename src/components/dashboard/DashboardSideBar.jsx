@@ -23,57 +23,88 @@ import {
   Sun,
   Moon,
 } from "lucide-react";
-import Image from "next/image";
 
 export default function DashboardSideBar({ session: initialSession }) {
   const [isOpen, setIsOpen] = useState(false);
   const [dbUserImage, setDbUserImage] = useState(null);
+  const [dbUserName, setDbUserName] = useState(null);
+  const [dbUserPlan, setDbUserPlan] = useState("Free");
   const pathname = usePathname();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
 
-  // Better Auth ক্লায়েন্ট সেশন হুক কল করার সঠিক প্যাটার্ন
   const { data: updatedSession } = authClient.useSession();
   const currentSession = updatedSession || initialSession;
-
-  useEffect(() => {
-    const fetchLatestUserImage = async () => {
-      if (!currentSession?.user?.id) return;
-
-      try {
-        const baseUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:5000";
-        const res = await fetch(
-          `${baseUrl}/api/arthub/user/${currentSession.user.id}`,
-        );
-        if (res.ok) {
-          const data = await res.json();
-          const fetchedImage = data?.success
-            ? data.data?.image_url || data.data?.image
-            : data?.image_url || data?.image;
-          setDbUserImage(fetchedImage);
-        }
-      } catch (error) {
-        console.error("Error fetching latest user image on sidebar:", error);
-      }
-    };
-
-    fetchLatestUserImage();
-  }, [currentSession?.user?.id, pathname]);
-
-  // পাথ চেঞ্জ হলে মোবাইল ড্রয়ার বন্ধ করা
-  useEffect(() => {
-    setIsOpen(false);
-  }, [pathname]);
 
   const rawRole = currentSession?.user?.role || "user";
   const role = rawRole.toLowerCase();
 
-  // ইমেজ এবং নাম রেজোলিউশন
+  useEffect(() => {
+    const fetchLatestUserData = async () => {
+      if (!currentSession?.user?.id || !currentSession?.user?.email) return;
+
+      const baseUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:5000";
+
+      try {
+        // ১. ইউজারের বেসিক প্রোফাইল ডেটা আনা
+        const userRes = await fetch(
+          `${baseUrl}/api/arthub/user/${currentSession.user.id}`,
+        );
+        if (userRes.ok) {
+          const data = await userRes.json();
+          const userData = data?.success ? data.data : data;
+
+          // 🚀 ডাটাবেজের ফিল্ড প্রপার্টি চেক ও সেভ
+          const fetchedImage =
+            userData?.image_url || userData?.imageUrl || userData?.image;
+          setDbUserImage(fetchedImage);
+
+          const fetchedName = userData?.name || userData?.username;
+          if (fetchedName) setDbUserName(fetchedName);
+        }
+
+        // 🚀 ফিক্স: ইউজার যদি আর্টিস্ট বা এডমিন হয়, তবে সাবস্ক্রিপশন চেক করার দরকার নেই
+        if (role === "artist" || role === "admin") {
+          setDbUserPlan(role); // প্ল্যানের জায়গায় রোলটাই শো করবে
+          return;
+        }
+
+        // ২. সাবস্ক্রিপশন এপিআই থেকে প্ল্যান আনা (শুধুমাত্র সাধারণ ইউজারদের জন্য)
+        const subRes = await fetch(
+          `${baseUrl}/api/arthub/subscriptions/subscriptions/${currentSession.user.email}`,
+        );
+        if (subRes.ok) {
+          const subData = await subRes.json();
+          if (subData?.success && subData?.data?.status === "complete") {
+            setDbUserPlan(subData.data.planName || "Free");
+          } else {
+            setDbUserPlan("Free");
+          }
+        } else {
+          setDbUserPlan("Free");
+        }
+      } catch (error) {
+        console.error("Error fetching latest user data on sidebar:", error);
+      }
+    };
+
+    fetchLatestUserData();
+  }, [currentSession?.user?.id, currentSession?.user?.email, pathname, role]); // ডিপেন্ডেন্সিতে role অ্যাড করা হলো
+
+  useEffect(() => {
+    setIsOpen(false);
+  }, [pathname]);
+
+  const userName = dbUserName || currentSession?.user?.name || "User";
+
+  // 🚀 লাইভ ইমেজ সোর্স রেজোলিউশন
   const userImage =
     dbUserImage ||
     currentSession?.user?.image_url ||
+    currentSession?.user?.imageUrl ||
     currentSession?.user?.image;
-  const userName = currentSession?.user?.name || "User";
+
+  const userPlan = dbUserPlan;
 
   const handleLogout = async () => {
     try {
@@ -161,28 +192,30 @@ export default function DashboardSideBar({ session: initialSession }) {
     setTheme(theme === "dark" ? "light" : "dark");
   };
 
+  const firstLetter = (userName || "U").charAt(0);
+
   return (
     <>
       {/* ================= DESKTOP SIDEBAR ================= */}
       <aside className="hidden md:flex flex-col w-64 shrink-0 border-r border-border p-4 h-screen sticky top-0 bg-background text-foreground transition-colors duration-300 select-none justify-between">
         <div className="flex flex-col gap-4 overflow-y-auto no-scrollbar">
-          {/* User Profile Info Header */}
           <div className="flex items-center justify-between p-2 border-b border-border/50 pb-4">
             <div className="flex items-center gap-3 min-w-0">
               {userImage ? (
-                <div className="relative w-10 h-10 shrink-0">
-                  <Image
+                <div className="w-10 h-10 shrink-0 relative">
+                  <img
                     src={userImage}
                     alt={userName}
-                    fill
-                    sizes="40px"
-                    className="rounded-full object-cover ring-2 ring-border"
-                    unoptimized
+                    className="w-full h-full rounded-full object-cover ring-2 ring-border"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.style.display = "none";
+                    }}
                   />
                 </div>
               ) : (
                 <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center font-bold text-muted-foreground uppercase shrink-0">
-                  {userName.charAt(0)}
+                  {firstLetter}
                 </div>
               )}
               <div className="flex flex-col min-w-0">
@@ -190,7 +223,10 @@ export default function DashboardSideBar({ session: initialSession }) {
                   {userName}
                 </span>
                 <span className="text-xs opacity-70 truncate capitalize">
-                  {role} Account
+                  {role} •{" "}
+                  <span className="text-primary font-medium tracking-wide uppercase text-[10px] bg-primary/10 px-1.5 py-0.5 rounded">
+                    {userPlan}
+                  </span>
                 </span>
               </div>
             </div>
@@ -205,7 +241,6 @@ export default function DashboardSideBar({ session: initialSession }) {
             </button>
           </div>
 
-          {/* Desktop Links Navigation */}
           <nav className="flex flex-col gap-2">
             {serializableNavItems.map((item, index) => {
               const isActive = checkActiveState(item.href);
@@ -235,7 +270,6 @@ export default function DashboardSideBar({ session: initialSession }) {
           </nav>
         </div>
 
-        {/* Bottom Desktop Logout Wrapper */}
         <div className="pt-4 border-t border-border/50">
           <button
             onClick={handleLogout}
@@ -271,7 +305,6 @@ export default function DashboardSideBar({ session: initialSession }) {
         </div>
       </div>
 
-      {/* Spacing to prevent overlay issues */}
       <div className="w-full h-16 md:hidden block shrink-0" />
 
       {/* ================= MOBILE DRAWER BACKDROP OVERLAY ================= */}
@@ -292,29 +325,34 @@ export default function DashboardSideBar({ session: initialSession }) {
       >
         <div className="flex flex-col gap-4 overflow-y-auto no-scrollbar">
           <div className="flex justify-between items-center pb-4 border-b border-border/50">
-            {/* Mobile User Metadata */}
             <div className="flex items-center gap-3 min-w-0">
               {userImage ? (
-                <div className="relative w-9 h-9 shrink-0">
-                  <Image
+                <div className="w-9 h-9 shrink-0 relative">
+                  <img
                     src={userImage}
                     alt={userName}
-                    fill
-                    sizes="36px"
-                    className="rounded-full object-cover ring-1 ring-border"
-                    unoptimized
+                    className="w-full h-full rounded-full object-cover ring-1 ring-border"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.style.display = "none";
+                    }}
                   />
                 </div>
               ) : (
                 <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center font-bold text-muted-foreground uppercase text-sm shrink-0">
-                  {userName.charAt(0)}
+                  {firstLetter}
                 </div>
               )}
               <div className="flex flex-col min-w-0">
                 <span className="text-sm font-semibold truncate">
                   {userName}
                 </span>
-                <span className="text-xs opacity-70 capitalize">{role}</span>
+                <span className="text-xs opacity-70 capitalize">
+                  {role} •{" "}
+                  <span className="text-primary font-bold uppercase text-[9px] bg-primary/10 px-1 rounded">
+                    {userPlan}
+                  </span>
+                </span>
               </div>
             </div>
             <button
@@ -325,7 +363,6 @@ export default function DashboardSideBar({ session: initialSession }) {
             </button>
           </div>
 
-          {/* Mobile Drawer Menu Links */}
           <nav className="flex flex-col gap-2">
             {serializableNavItems.map((item, index) => {
               const isActive = checkActiveState(item.href);
@@ -355,7 +392,6 @@ export default function DashboardSideBar({ session: initialSession }) {
           </nav>
         </div>
 
-        {/* Mobile App Bottom Logout Wrapper */}
         <div className="pt-4 border-t border-border/50">
           <button
             onClick={handleLogout}

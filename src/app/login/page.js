@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import toast from "react-hot-toast";
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -43,9 +44,9 @@ const LoginPage = () => {
 
       if (error) {
         console.error("Login Error:", error);
-        alert(error.message || "Login failed");
+        toast.error(error.message || "Login failed");
       } else {
-        alert("Login successful!");
+        toast.success("Login successful!");
       }
     } catch (err) {
       console.error("Unexpected error:", err);

@@ -37,7 +37,7 @@ export default function ArtworkDetail() {
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editingText, setEditingText] = useState("");
 
-  // আর্টওয়ার্ক ডেটা ফেচ
+  // আর্টওয়ার্ক ডেটা ফেচ
   useEffect(() => {
     const fetchArtworkData = async () => {
       if (!id) return;
@@ -69,20 +69,26 @@ export default function ArtworkDetail() {
     fetchArtworkData();
   }, [id, apiUrl]);
 
-  // পারচেজ হ্যান্ডলার
+  const artImage = artwork?.imageUrl || artwork?.image_url || artwork?.image;
+  const artistName =
+    artwork?.artist?.name || artwork?.artist || artwork?.artistName;
+  const artistId = artwork?.artist?._id || artwork?.artist;
+  const isArtistOwner = session?.user?.id === artistId;
+  const isPurchaseDisabled = session?.user?.role === "artist";
+
+  // 🚀 পারচেজ হ্যান্ডলার (Single Artwork Purchase Settings)
   const handlePurchase = async () => {
     if (!session?.user) {
       router.push("/login");
       return;
     }
 
-    // ইউজার রোল যদি আর্টিস্ট হয়, তবে সে পারচেজ করতে পারবে না
+    // ইউজার রোল যদি আর্টিস্ট হয়, তবে সে পারচেজ করতে পারবে না
     if (session.user.role === "artist") {
       alert("Artists are not allowed to purchase artworks!");
       return;
     }
 
-    const artistId = artwork?.artist?._id || artwork?.artist;
     if (session.user.id === artistId) {
       alert("You cannot buy your own artwork!");
       return;
@@ -91,25 +97,32 @@ export default function ArtworkDetail() {
     try {
       setActionLoading(true);
 
-      const res = await fetch(`${apiUrl}/api/arthub/checkout`, {
+      // স্ট্রাইপ ওয়ান-টাইম চেকআউটের জন্য প্রয়োজনীয় মেটাডেটা পাঠানো হচ্ছে
+      const res = await fetch(`${apiUrl}/api/arthub/checkout/single-artwork`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           artworkId: artwork._id,
+          title: artwork.title,
+          price: artwork.price,
+          imageUrl: artImage,
           userId: session.user.id,
+          userEmail: session.user.email, // Better-Auth সেশন থেকে ইমেইল ট্র্যাক রাখার জন্য
         }),
       });
 
       const checkoutData = await res.json();
-      if (checkoutData?.url) {
+      if (checkoutData?.success && checkoutData?.url) {
+        // সরাসরি স্ট্রাইপের অফিশিয়াল গেটওয়েতে ইউজার চলে যাবে
         window.location.href = checkoutData.url;
       } else {
-        alert("Failed to initiate checkout");
+        alert(checkoutData?.message || "Failed to initiate checkout");
       }
     } catch (err) {
       console.error("Checkout Error:", err);
+      alert("Something went wrong. Please try again.");
     } finally {
       setActionLoading(false);
     }
@@ -193,7 +206,7 @@ export default function ArtworkDetail() {
     }
   };
 
-  // আর্টওয়ার্ক পোস্ট ডিলিট
+  // আর্টওয়ার্ক পোস্ট ডিলিট
   const handleDelete = async () => {
     if (!confirm("Are you sure you want to delete this artwork?")) return;
 
@@ -237,17 +250,6 @@ export default function ArtworkDetail() {
         </Link>
       </div>
     );
-
-  const artImage = artwork.imageUrl || artwork.image_url || artwork.image;
-  const artistName =
-    artwork.artist?.name || artwork.artist || artwork.artistName;
-
-  const artistId = artwork.artist?._id || artwork.artist;
-
-  const isArtistOwner = session?.user?.id === artistId;
-
-  // 🛠️ মেইন কন্ডিশন: লগইন করা ইউজারের রোল যদি "artist" হয়, তবে পারচেজ বাটন ইনঅ্যাক্টিভ হবে
-  const isPurchaseDisabled = session?.user?.role === "artist";
 
   return (
     <div className="min-h-screen bg-gray-50/50 dark:bg-gray-950 py-8 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
@@ -365,7 +367,6 @@ export default function ArtworkDetail() {
                   </div>
                 )}
 
-                {/* 🛠️ ইউজার রোল 'artist' হলে পারচেজ বাটনটি ডিসেবলড এবং ইনঅ্যাক্টিভ দেখাবে */}
                 {isPurchaseDisabled ? (
                   <Button
                     disabled
@@ -383,9 +384,7 @@ export default function ArtworkDetail() {
                     className="w-full h-12 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-bold text-base rounded-xl transition-all shadow-lg shadow-blue-500/10 active:scale-[0.99] disabled:opacity-50"
                   >
                     <ShoppingBag size={18} className="mr-2" />
-                    {actionLoading
-                      ? "Processing order..."
-                      : "Purchase Masterpiece"}
+                    {actionLoading ? "Processing order..." : "Buy Now"}
                   </Button>
                 )}
               </div>
