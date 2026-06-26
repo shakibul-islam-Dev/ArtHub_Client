@@ -108,7 +108,7 @@ export default function DashboardSideBar({ session: initialSession }) {
         href: "/dashboard/user/subscriptions",
         icon: CreditCard,
       },
-      { label: "Profile", href: "/dashboard/user/profile", icon: User },
+      { label: "Profile", href: "/settings", icon: User },
     ],
     artist: [
       { label: "Home", href: "/dashboard/artist", icon: Home },
@@ -127,7 +127,6 @@ export default function DashboardSideBar({ session: initialSession }) {
         href: "/dashboard/artist/sales-history",
         icon: TrendingUp,
       },
-      { label: "Profile", href: "/dashboard/artist/profile", icon: User },
     ],
     admin: [
       { label: "Home", href: "/dashboard/admin", icon: Home },

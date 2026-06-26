@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
@@ -19,11 +19,18 @@ import { Button } from "@/components/ui/button";
 
 const NavigationBar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
-  // useSession থেকে সেশন ডাটা এবং লোডিং অবস্থা (isPending) নেওয়া হয়েছে
   const { data: session, isPending } = useSession();
+
+  const userImageUrl =
+    session?.user?.image || session?.user?.image_url || session?.user?.picture;
+
+  useEffect(() => {
+    setImageError(false);
+  }, [userImageUrl]);
 
   if (pathname.startsWith("/dashboard/")) {
     return null;
@@ -48,9 +55,6 @@ const NavigationBar = () => {
 
   const userName = session?.user?.name;
   const userEmail = session?.user?.email;
-
-  const userImageUrl =
-    session?.user?.image || session?.user?.image_url || session?.user?.picture;
   const userInitial = userName?.trim().charAt(0).toUpperCase() || "U";
 
   return (
@@ -87,38 +91,63 @@ const NavigationBar = () => {
             >
               Browse
             </Link>
+            <Link
+              href="/plans"
+              className={
+                isActive("/plans")
+                  ? "text-primary font-bold"
+                  : "text-muted-foreground hover:text-primary transition"
+              }
+            >
+              Plans
+            </Link>
 
             {/* Dark Mode Toggle */}
             <ModeToggle />
 
-            {/* সেশন লোড হওয়া পর্যন্ত একটি ছোট প্লেসহোল্ডার দেখানো হচ্ছে */}
             {isPending ? (
               <div className="w-8 h-8 rounded-full bg-muted animate-pulse" />
             ) : session ? (
               <Dropdown>
                 <Dropdown.Trigger className="rounded-full cursor-pointer focus:outline-none">
                   <div>
+                    {/* 🎯 ফিক্সড: চাইল্ড বাদ দিয়ে HeroUI এর ডিফল্ট fallback ব্যবহার করা হয়েছে */}
                     <Avatar
-                      src={userImageUrl || undefined}
-                      name={userInitial}
+                      src={
+                        userImageUrl?.trim() && !imageError
+                          ? userImageUrl.trim()
+                          : undefined
+                      }
+                      fallback={
+                        <span className="font-semibold text-sm">
+                          {userInitial}
+                        </span>
+                      }
                       className="bg-primary text-primary-foreground font-semibold cursor-pointer border border-border"
-                    >
-                      {!userImageUrl && userInitial}
-                    </Avatar>
+                      onError={() => setImageError(true)}
+                    />
                   </div>
                 </Dropdown.Trigger>
 
                 <Dropdown.Popover className="bg-popover text-popover-foreground border border-border">
                   <div className="px-3 pt-3 pb-2 border-b border-border/50">
                     <div className="flex items-center gap-3">
+                      {/* 🎯 ফিক্সড পপওভার অ্যাভাটার */}
                       <Avatar
-                        src={userImageUrl || undefined}
-                        name={userInitial}
+                        src={
+                          userImageUrl?.trim() && !imageError
+                            ? userImageUrl.trim()
+                            : undefined
+                        }
+                        fallback={
+                          <span className="font-medium text-xs">
+                            {userInitial}
+                          </span>
+                        }
                         size="sm"
-                        className="bg-primary text-primary-foreground font-medium border border-border"
-                      >
-                        {!userImageUrl && userInitial}
-                      </Avatar>
+                        className="bg-primary text-primary-foreground border border-border"
+                        onError={() => setImageError(true)}
+                      />
                       <div className="flex flex-col gap-0">
                         {userName && (
                           <p className="text-sm leading-5 font-semibold">
@@ -236,13 +265,20 @@ const NavigationBar = () => {
           ) : session ? (
             <div className="space-y-3 px-3">
               <div className="flex items-center gap-3 py-2">
+                {/* 🎯 ফিক্সড মোবাইল অ্যাভাটার */}
                 <Avatar
-                  src={userImageUrl || undefined}
-                  name={userInitial}
-                  className="w-10 h-10 bg-primary text-primary-foreground font-bold text-base border border-border"
-                >
-                  {!userImageUrl && userInitial}
-                </Avatar>
+                  src={
+                    userImageUrl?.trim() && !imageError
+                      ? userImageUrl.trim()
+                      : undefined
+                  }
+                  showFallback
+                  fallback={
+                    <span className="font-bold text-base">{userInitial}</span>
+                  }
+                  className="w-10 h-10 bg-primary text-primary-foreground border border-border"
+                  onError={() => setImageError(true)}
+                />
                 <div>
                   {userName && (
                     <p className="text-sm font-semibold">{userName}</p>

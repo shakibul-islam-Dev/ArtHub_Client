@@ -28,7 +28,6 @@ const UserDashboardHome = () => {
         setLoading(true);
         setError(false);
 
-      
         const userId = session.user.id || session.user._id;
 
         const targetUrl = `http://localhost:5000/api/arthub/user/${userId}`;
@@ -146,7 +145,7 @@ const UserDashboardHome = () => {
           </div>
 
           <Link
-            href="/dashboard/profile/edit"
+            href="/settings"
             className="w-full sm:w-auto text-center px-4 py-2 text-sm font-medium bg-secondary text-secondary-foreground hover:opacity-90 rounded-xl"
           >
             Edit Profile
