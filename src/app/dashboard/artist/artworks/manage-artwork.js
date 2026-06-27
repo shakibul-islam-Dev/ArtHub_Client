@@ -24,7 +24,7 @@ const ManageArtWorks = ({ userData }) => {
   const [activeArt, setActiveArt] = useState(null);
 
   const artistId =
-    userData?.id || userData?._id || userData?.user?.id || userData?._id;
+    userData?.id || userData?._id || userData?.user?.id || userData?.user?._id;
   const artistName = userData?.name || userData?.user?.name || "Unknown";
 
   useEffect(() => {
@@ -32,18 +32,18 @@ const ManageArtWorks = ({ userData }) => {
       if (!artistId) return;
       try {
         setLoading(true);
+        // 🔥 ফিক্স: এখানে সরাসরি কুয়েরি প্যারামিটার হিসেবে artist_id পাঠানো হচ্ছে
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_URL}/api/arthub/artwork`,
+          `${process.env.NEXT_PUBLIC_URL}/api/arthub/artwork?artist_id=${artistId}`,
           { cache: "no-store" },
         );
         const allArtworks = await res.json();
         const targetData = Array.isArray(allArtworks)
           ? allArtworks
           : allArtworks.data || [];
-        const userSpecificArt = targetData.filter(
-          (art) => art.artist_id === artistId,
-        );
-        setArtworks(userSpecificArt);
+
+        // ব্যাকএন্ড থেকেই ফিল্টার হয়ে আসবে, তাই এখানে আর আলাদা ফিল্টারের দরকার নেই
+        setArtworks(targetData);
       } catch (error) {
         console.error("Error fetching data:", error);
         toast.error("Failed to load artworks!");
@@ -73,7 +73,6 @@ const ManageArtWorks = ({ userData }) => {
 
     try {
       setDeletingId(targetId);
-      // এখানে URL টি ঠিক করে দেওয়া হয়েছে
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_URL}/api/arthub/artwork/${targetId}`,
         {
@@ -157,6 +156,18 @@ const ManageArtWorks = ({ userData }) => {
                   alt={art.title}
                   unoptimized
                 />
+                {/* ভিজুয়াল ইন্ডিকেটর: আর্টওয়ার্ক পেন্ডিং নাকি অ্যাপ্রুভড সেটা দেখার জন্য */}
+                <div className="absolute top-2 left-2 z-10">
+                  <span
+                    className={`px-2 py-0.5 text-[10px] font-bold uppercase rounded shadow-sm ${
+                      art.status === "approved"
+                        ? "bg-green-500 text-white"
+                        : "bg-yellow-500 text-black"
+                    }`}
+                  >
+                    {art.status || "pending"}
+                  </span>
+                </div>
               </div>
               <CardContent className="p-4 flex flex-col flex-1 justify-between gap-4">
                 <div>

@@ -3,10 +3,6 @@
 import React from "react";
 
 export default function SalesHistory({ sales = [] }) {
-  // ব্রাউজারের কনসোলে চেক করতে পারবেন ডাটা ঠিকঠাক আসলো কি না
-  console.log("Data in SalesHistory component:", sales);
-
-  // সেফটি গার্ড
   const salesData = Array.isArray(sales) ? sales : [];
 
   return (
@@ -23,7 +19,6 @@ export default function SalesHistory({ sales = [] }) {
         <tbody className="text-sm text-foreground/90 divide-y divide-border/40">
           {salesData.length > 0 ? (
             salesData.map((sale) => {
-              // 1. Artwork Title হ্যান্ডলিং (ব্যাকএন্ড যদি populate করে পাঠায়, অথবা শুধু আইডি থাকে)
               const title =
                 sale.artworkTitle ||
                 sale.artworkId?.title ||
@@ -32,24 +27,20 @@ export default function SalesHistory({ sales = [] }) {
                   ? `Artwork ID: ...${sale.artworkId.$oid.slice(-6)}`
                   : "Untitled Artwork");
 
-              // 2. Buyer Name / Email হ্যান্ডলিং (যেহেতু Transaction এ userEmail এবং userId আছে)
               const buyer =
                 sale.buyerName ||
                 sale.userId?.name ||
                 sale.user?.name ||
-                sale.userEmail || // ট্রানজেকশনে থাকা userEmail কে ফলব্যাক হিসেবে রাখা হলো
+                sale.userEmail ||
                 "Anonymous Buyer";
 
-              // 3. Amount হ্যান্ডলিং
               const amount = sale.amount || sale.price || 0;
 
-              // 4. MongoDB $date অবজেক্ট বা নরমাল স্ট্রিং ডেট হ্যান্ডলিং
               let rawDate = sale.purchaseDate || sale.createdAt;
               if (rawDate && typeof rawDate === "object" && rawDate.$date) {
-                rawDate = rawDate.$date; // মঙ্গোডিবির {"$date": "..."} স্ট্রাকচার হ্যান্ডেল করার জন্য
+                rawDate = rawDate.$date;
               }
 
-              // 5. Unique Row Key জেনারেশন
               const rowKey =
                 sale._id?.$oid ||
                 sale.id ||

@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   LineChart,
   Line,
@@ -11,23 +11,142 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-const data = [
-  { name: "Jan", sales: 4000 },
-  { name: "Feb", sales: 3000 },
-  { name: "Mar", sales: 5000 },
-  { name: "Apr", sales: 4000 },
-  { name: "May", sales: 7000 },
-  { name: "Jun", sales: 6000 },
-];
-
-const stats = [
-  { title: "Total Users", value: "1,240" },
-  { title: "Total Artists", value: "350" },
-  { title: "Total Artworks Sold", value: "8,920" },
-  { title: "Total Revenue", value: "$124,500" },
-];
-
 const AnalyticsPage = () => {
+  const [stats, setStats] = useState([
+    { title: "Total Users", value: "0" },
+    { title: "Total Artists", value: "0" },
+    { title: "Total Artworks Sold", value: "0" },
+    { title: "Total Revenue", value: "$0" },
+  ]);
+  const [chartData, setChartData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchAllData = async () => {
+      try {
+        // ১. প্রতিটি এপিআই রুট থেকে আলাদাভাবে ডেটা ফেচ করা হচ্ছে
+        const userRes = await fetch("http://localhost:5000/api/arthub/user");
+        if (!userRes.ok) throw new Error(`User API failed: ${userRes.status}`);
+
+        const artworkRes = await fetch(
+          "http://localhost:5000/api/arthub/artwork",
+        );
+        if (!artworkRes.ok)
+          throw new Error(`Artwork API failed: ${artworkRes.status}`);
+
+        const transRes = await fetch(
+          "http://localhost:5000/api/arthub/transactions",
+        );
+        if (!transRes.ok)
+          throw new Error(`Transaction API failed: ${transRes.status}`);
+
+        const usersData = await userRes.json();
+        const artworksData = await artworkRes.json();
+        const transData = await transRes.json();
+
+        // ২. এপিআই রেসপন্স অবজেক্ট হলে সেখান থেকে অ্যারে ফরম্যাট নিশ্চিত করা
+        const users = Array.isArray(usersData)
+          ? usersData
+          : usersData.data || usersData.users || [];
+        const artworks = Array.isArray(artworksData)
+          ? artworksData
+          : artworksData.data || artworksData.artworks || [];
+        const transactions = Array.isArray(transData)
+          ? transData
+          : transData.data || transData.transactions || [];
+
+        // ৩. ক্যালকুলেশন লজিক
+        const totalUsers = users.length;
+        const totalArtists = users.filter(
+          (user) => user.role === "artist",
+        ).length;
+        const totalArtworksSold = transactions.length;
+
+        const totalRevenue = transactions.reduce(
+          (sum, item) => sum + Number(item.amount || item.price || 0),
+          0,
+        );
+
+        // ৪. টপ কার্ড স্ট্যাটাস আপডেট
+        setStats([
+          { title: "Total Users", value: totalUsers.toLocaleString() },
+          { title: "Total Artists", value: totalArtists.toLocaleString() },
+          {
+            title: "Total Artworks Sold",
+            value: totalArtworksSold.toLocaleString(),
+          },
+          {
+            title: "Total Revenue",
+            value: `$${totalRevenue.toLocaleString()}`,
+          },
+        ]);
+
+        // ৫. চার্টের জন্য মাস ভিত্তিক ডেটা ম্যাপ করা
+        const monthlyMap = {};
+        transactions.forEach((item) => {
+          const dateStr = item.createdAt || item.date;
+          if (dateStr) {
+            const monthName = new Date(dateStr).toLocaleString("en-US", {
+              month: "short",
+            }); // যেমন: "Jan"
+            const amount = Number(item.amount || item.price || 0);
+            monthlyMap[monthName] = (monthlyMap[monthName] || 0) + amount;
+          }
+        });
+
+        const monthsOrder = [
+          "Jan",
+          "Feb",
+          "Mar",
+          "Apr",
+          "May",
+          "Jun",
+          "Jul",
+          "Aug",
+          "Sep",
+          "Oct",
+          "Nov",
+          "Dec",
+        ];
+
+        const formattedChartData = monthsOrder
+          .filter(
+            (month) =>
+              monthlyMap[month] !== undefined ||
+              Object.keys(monthlyMap).length === 0,
+          )
+          .map((month) => ({
+            name: month,
+            sales: monthlyMap[month] || 0,
+          }));
+
+        setChartData(
+          formattedChartData.length > 0
+            ? formattedChartData
+            : [
+                { name: "Jan", sales: 0 },
+                { name: "Feb", sales: 0 },
+                { name: "Mar", sales: 0 },
+              ],
+        );
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAllData();
+  }, []);
+
+  if (loading)
+    return (
+      <div className="text-center p-10 text-neutral-500">লোড হচ্ছে...</div>
+    );
+  if (error)
+    return <div className="text-center p-10 text-red-500">Error: {error}</div>;
+
   return (
     <div className="p-6 bg-neutral-50 dark:bg-neutral-950 min-h-screen transition-colors duration-300">
       <h1 className="text-2xl font-bold mb-6 text-neutral-900 dark:text-neutral-50">
@@ -59,7 +178,7 @@ const AnalyticsPage = () => {
         <div className="h-[300px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart
-              data={data}
+              data={chartData}
               margin={{ top: 5, right: 20, bottom: 5, left: 0 }}
             >
               <CartesianGrid

@@ -13,6 +13,8 @@ import {
   ArrowLeft,
   Loader2,
   ShoppingBag,
+  Check,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/auth-client";
@@ -33,7 +35,7 @@ export default function ArtworkDetail() {
   const [error, setError] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
-  // Comment Editing States
+  // কমেন্ট এডিট করার জন্য স্টেট
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editingText, setEditingText] = useState("");
 
@@ -69,10 +71,17 @@ export default function ArtworkDetail() {
     fetchArtworkData();
   }, [id, apiUrl]);
 
-  const artImage = artwork?.imageUrl || artwork?.image_url || artwork?.image;
+  // 🎯 ব্যাকএন্ড মডেল (Artwork Model) অনুযায়ী নিখুঁত ম্যাপিং
+  const artImage = artwork?.image_url || artwork?.imageUrl || artwork?.image;
   const artistName =
-    artwork?.artist?.name || artwork?.artist || artwork?.artistName;
-  const artistId = artwork?.artist?._id || artwork?.artist;
+    artwork?.artist_name || artwork?.artist?.name || "Unknown Artist";
+  const artistId =
+    artwork?.artist_id || artwork?.artist?._id || artwork?.artist;
+  const artDescription = artwork?.description || artwork?.desc;
+
+  // আপলোডের তারিখের জন্য ব্যাকএন্ডের date_uploaded অথবা createdAt ব্যবহার করা হচ্ছে
+  const uploadDate = artwork?.date_uploaded || artwork?.createdAt;
+
   const isArtistOwner = session?.user?.id === artistId;
   const isPurchaseDisabled = session?.user?.role === "artist";
 
@@ -83,7 +92,6 @@ export default function ArtworkDetail() {
       return;
     }
 
-    // ইউজার রোল যদি আর্টিস্ট হয়, তবে সে পারচেজ করতে পারবে না
     if (session.user.role === "artist") {
       alert("Artists are not allowed to purchase artworks!");
       return;
@@ -97,7 +105,6 @@ export default function ArtworkDetail() {
     try {
       setActionLoading(true);
 
-      // স্ট্রাইপ ওয়ান-টাইম চেকআউটের জন্য প্রয়োজনীয় মেটাডেটা পাঠানো হচ্ছে
       const res = await fetch(`${apiUrl}/api/arthub/checkout/single-artwork`, {
         method: "POST",
         headers: {
@@ -109,13 +116,12 @@ export default function ArtworkDetail() {
           price: artwork.price,
           imageUrl: artImage,
           userId: session.user.id,
-          userEmail: session.user.email, // Better-Auth সেশন থেকে ইমেইল ট্র্যাক রাখার জন্য
+          userEmail: session.user.email,
         }),
       });
 
       const checkoutData = await res.json();
       if (checkoutData?.success && checkoutData?.url) {
-        // সরাসরি স্ট্রাইপের অফিশিয়াল গেটওয়েতে ইউজার চলে যাবে
         window.location.href = checkoutData.url;
       } else {
         alert(checkoutData?.message || "Failed to initiate checkout");
@@ -158,8 +164,8 @@ export default function ArtworkDetail() {
     }
   };
 
-  // কমেন্ট এডিট সেভ
-  const handleEditSubmit = async (commentId) => {
+  // কমেন্ট এডিট হ্যান্ডলার
+  const handleEditComment = async (commentId) => {
     if (!editingText.trim()) return;
 
     try {
@@ -173,11 +179,8 @@ export default function ArtworkDetail() {
       );
 
       if (res.ok) {
-        setComments(
-          comments.map((c) =>
-            c._id === commentId ? { ...c, text: editingText } : c,
-          ),
-        );
+        const updatedArtwork = await res.json();
+        setComments(updatedArtwork.comments || []);
         setEditingCommentId(null);
         setEditingText("");
       }
@@ -186,8 +189,8 @@ export default function ArtworkDetail() {
     }
   };
 
-  // কমেন্ট ডিলিট
-  const handleCommentDelete = async (commentId) => {
+  // কমেন্ট ডিলিট হ্যান্ডলার
+  const handleDeleteComment = async (commentId) => {
     if (!confirm("Are you sure you want to delete this comment?")) return;
 
     try {
@@ -199,28 +202,11 @@ export default function ArtworkDetail() {
       );
 
       if (res.ok) {
-        setComments(comments.filter((c) => c._id !== commentId));
+        const updatedArtwork = await res.json();
+        setComments(updatedArtwork.comments || []);
       }
     } catch (err) {
       console.error("Comment delete error:", err);
-    }
-  };
-
-  // আর্টওয়ার্ক পোস্ট ডিলিট
-  const handleDelete = async () => {
-    if (!confirm("Are you sure you want to delete this artwork?")) return;
-
-    try {
-      const res = await fetch(`${apiUrl}/api/arthub/artwork/${id}`, {
-        method: "DELETE",
-      });
-
-      if (res.ok) {
-        router.push("/");
-        router.refresh();
-      }
-    } catch (err) {
-      console.error("Artwork delete error:", err);
     }
   };
 
@@ -309,8 +295,7 @@ export default function ArtworkDetail() {
 
                 <div className="bg-gray-50/70 dark:bg-gray-950/40 p-4 rounded-xl border border-gray-100 dark:border-gray-800/80 mt-2">
                   <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 leading-relaxed">
-                    {artwork.description ||
-                      "No description provided for this artwork."}
+                    {artDescription}
                   </p>
                 </div>
 
@@ -323,50 +308,25 @@ export default function ArtworkDetail() {
                       ${(artwork.price || 0).toLocaleString()}
                     </p>
                   </div>
-                  {artwork.createdAt && (
+                  {uploadDate && (
                     <div className="text-right flex flex-col items-end">
                       <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-1">
                         <Calendar size={12} /> Created
                       </p>
                       <p className="text-sm font-medium text-gray-800 dark:text-gray-200 mt-1">
-                        {new Date(artwork.createdAt).toLocaleDateString(
-                          "en-US",
-                          {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          },
-                        )}
+                        {new Date(uploadDate).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
                       </p>
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Call To Actions */}
-              <div className="pt-4 border-t border-gray-100 dark:border-gray-800/60 space-y-3">
-                {isArtistOwner && (
-                  <div className="grid grid-cols-2 gap-3">
-                    <Button
-                      onClick={() =>
-                        router.push(`/dashboard/artist/edit-artwork/${id}`)
-                      }
-                      className="h-12 bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500 text-white font-bold rounded-xl transition-all shadow-md active:scale-[0.99]"
-                    >
-                      <Edit3 size={16} className="mr-2" />
-                      Edit Post
-                    </Button>
-                    <Button
-                      onClick={handleDelete}
-                      variant="destructive"
-                      className="h-12 font-bold rounded-xl transition-all shadow-md active:scale-[0.99]"
-                    >
-                      <Trash2 size={16} className="mr-2" />
-                      Delete
-                    </Button>
-                  </div>
-                )}
-
+              {/* Call To Action */}
+              <div className="pt-4 border-t border-gray-100 dark:border-gray-800/60">
                 {isPurchaseDisabled ? (
                   <Button
                     disabled
@@ -437,82 +397,85 @@ export default function ArtworkDetail() {
               </p>
             ) : (
               comments.map((comment) => {
-                const isCommentOwner =
-                  session?.user?.id === comment.userId ||
-                  comment.username === session?.user?.name;
+                const isCommentOwner = session?.user?.id === comment.userId;
                 const isEditing = editingCommentId === comment._id;
 
                 return (
                   <div
                     key={comment._id}
-                    className="p-4 bg-gray-50/60 dark:bg-gray-950/40 rounded-xl border border-gray-100 dark:border-gray-800/80 space-y-2.5 transition-all"
+                    className="p-4 bg-gray-50/60 dark:bg-gray-950/40 rounded-xl border border-gray-100 dark:border-gray-800/80 space-y-2.5 transition-all group"
                   >
                     <div className="flex justify-between items-center">
                       <span className="font-bold text-xs sm:text-sm text-gray-900 dark:text-gray-200">
                         {comment.username}
                       </span>
-                      <span className="text-[11px] text-gray-400 dark:text-gray-500 font-medium">
-                        {comment.createdAt &&
-                          new Date(comment.createdAt).toLocaleDateString(
-                            "en-US",
-                            {
-                              month: "short",
-                              day: "numeric",
-                            },
-                          )}
-                      </span>
-                    </div>
 
-                    {isEditing ? (
-                      <div className="space-y-2 mt-1">
-                        <textarea
-                          value={editingText}
-                          onChange={(e) => setEditingText(e.target.value)}
-                          className="w-full p-2.5 bg-white dark:bg-gray-950 border border-blue-500 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none"
-                          rows={2}
-                        />
-                        <div className="flex space-x-2 text-xs">
-                          <button
-                            onClick={() => handleEditSubmit(comment._id)}
-                            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-md"
-                          >
-                            Save Change
-                          </button>
-                          <button
-                            onClick={() => setEditingCommentId(null)}
-                            className="px-3 py-1.5 bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-md"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex items-start justify-between gap-4">
-                        <p className="text-sm text-gray-600 dark:text-gray-300 flex-1 break-words leading-relaxed">
-                          {comment.text}
-                        </p>
+                      <div className="flex items-center gap-3">
+                        <span className="text-[11px] text-gray-400 dark:text-gray-500 font-medium">
+                          {comment.createdAt &&
+                            new Date(comment.createdAt).toLocaleDateString(
+                              "en-US",
+                              {
+                                month: "short",
+                                day: "numeric",
+                              },
+                            )}
+                        </span>
 
-                        {isCommentOwner && (
-                          <div className="flex items-center space-x-2.5 shrink-0 pt-0.5">
+                        {isCommentOwner && !isEditing && (
+                          <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                             <button
                               onClick={() => {
                                 setEditingCommentId(comment._id);
                                 setEditingText(comment.text);
                               }}
-                              className="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors p-1"
+                              className="p-1 text-gray-400 hover:text-amber-500 dark:hover:text-amber-400 transition-colors"
+                              title="Edit comment"
                             >
                               <Edit3 size={14} />
                             </button>
                             <button
-                              onClick={() => handleCommentDelete(comment._id)}
-                              className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                              onClick={() => handleDeleteComment(comment._id)}
+                              className="p-1 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                              title="Delete comment"
                             >
                               <Trash2 size={14} />
                             </button>
                           </div>
                         )}
                       </div>
-                    )}
+                    </div>
+
+                    <div className="flex items-start justify-between gap-4">
+                      {isEditing ? (
+                        <div className="w-full space-y-2">
+                          <input
+                            type="text"
+                            value={editingText}
+                            onChange={(e) => setEditingText(e.target.value)}
+                            className="w-full px-3 py-1.5 text-sm bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:border-blue-500"
+                          />
+                          <div className="flex justify-end gap-2">
+                            <button
+                              onClick={() => setEditingCommentId(null)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-gray-500 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 rounded-md transition-all"
+                            >
+                              <X size={12} /> Cancel
+                            </button>
+                            <button
+                              onClick={() => handleEditComment(comment._id)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-all"
+                            >
+                              <Check size={12} /> Save
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-600 dark:text-gray-300 flex-1 break-words leading-relaxed">
+                          {comment.text}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 );
               })
