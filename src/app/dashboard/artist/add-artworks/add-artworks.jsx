@@ -18,7 +18,6 @@ import { useRouter } from "next/navigation";
 import { Avatar } from "@heroui/react";
 
 export default function AddProductForm({ artist }) {
-  console.log("=== CLIENT COMPONENT RECEIVED ARTIST ===", artist);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
   const router = useRouter();
@@ -26,14 +25,13 @@ export default function AddProductForm({ artist }) {
   const DATABASE_API_URL = process.env.NEXT_PUBLIC_URL || "";
   const IMGBB_API_KEY = process.env.NEXT_PUBLIC_IMAGE_UPLOAD_API_KEY;
 
-  // 🛠️ Better-Auth এবং ডাটাবেজ অবজেক্ট হ্যান্ডলিং ফলব্যাক
-  // 🛠️ আপনার AddProductForm এর ভেতরে এই ৩টি লাইন এভাবে লিখুন
+ 
   const currentArtistName = artist?.name
     ? String(artist.name).trim()
     : "Unknown Artist";
   const currentArtistImage = artist?.image ? String(artist.image).trim() : "";
 
-  // Better-Auth এর স্ট্রিং আইডি সরাসরি 'id' তে থাকে, সেটিকে স্ট্রিং আকারে কনভার্ট করে নিন
+
   const currentArtistId = artist?.id
     ? String(artist.id).trim()
     : artist?._id || "";

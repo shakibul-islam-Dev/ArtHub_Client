@@ -65,7 +65,7 @@ export default function DashboardSideBar({ session: initialSession }) {
 
         // 🚀 ফিক্স: ইউজার যদি আর্টিস্ট বা এডমিন হয়, তবে সাবস্ক্রিপশন চেক করার দরকার নেই
         if (role === "artist" || role === "admin") {
-          setDbUserPlan(role); // প্ল্যানের জায়গায় রোলটাই শো করবে
+          setDbUserPlan(role); // প্ল্যানের জায়গায় রোলটাই শো করবে
           return;
         }
 
@@ -134,11 +134,6 @@ export default function DashboardSideBar({ session: initialSession }) {
         href: "/dashboard/user/purchased-history",
         icon: History,
       },
-      {
-        label: "Subscriptions",
-        href: "/dashboard/user/subscriptions",
-        icon: CreditCard,
-      },
       { label: "Profile", href: "/settings", icon: User },
     ],
     artist: [
@@ -200,7 +195,10 @@ export default function DashboardSideBar({ session: initialSession }) {
       <aside className="hidden md:flex flex-col w-64 shrink-0 border-r border-border p-4 h-screen sticky top-0 bg-background text-foreground transition-colors duration-300 select-none justify-between">
         <div className="flex flex-col gap-4 overflow-y-auto no-scrollbar">
           <div className="flex items-center justify-between p-2 border-b border-border/50 pb-4">
-            <div className="flex items-center gap-3 min-w-0">
+            <Link
+              href="/"
+              className="flex items-center gap-3 min-w-0 hover:opacity-85 transition-opacity cursor-pointer"
+            >
               {userImage ? (
                 <div className="w-10 h-10 shrink-0 relative">
                   <img
@@ -229,7 +227,7 @@ export default function DashboardSideBar({ session: initialSession }) {
                   </span>
                 </span>
               </div>
-            </div>
+            </Link>
 
             <button
               onClick={toggleTheme}
@@ -325,7 +323,10 @@ export default function DashboardSideBar({ session: initialSession }) {
       >
         <div className="flex flex-col gap-4 overflow-y-auto no-scrollbar">
           <div className="flex justify-between items-center pb-4 border-b border-border/50">
-            <div className="flex items-center gap-3 min-w-0">
+            <Link
+              href="/"
+              className="flex items-center gap-3 min-w-0 hover:opacity-85 transition-opacity cursor-pointer"
+            >
               {userImage ? (
                 <div className="w-9 h-9 shrink-0 relative">
                   <img
@@ -354,7 +355,8 @@ export default function DashboardSideBar({ session: initialSession }) {
                   </span>
                 </span>
               </div>
-            </div>
+            </Link>
+
             <button
               onClick={() => setIsOpen(false)}
               className="text-muted-foreground p-1 hover:bg-muted rounded-md transition-colors"

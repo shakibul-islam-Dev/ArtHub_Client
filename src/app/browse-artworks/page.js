@@ -22,7 +22,6 @@ const BrowseArtworksPage = () => {
     const fetchArtworks = async () => {
       try {
         setLoading(true);
-
         const response = await fetch(`${apiUrl}/api/arthub/artwork`);
 
         if (!response.ok) {
@@ -43,19 +42,26 @@ const BrowseArtworksPage = () => {
     fetchArtworks();
   }, [apiUrl]);
 
-  // 1. Extract unique categories dynamically
+  // ১. ইউনিক ক্যাটাগরি এক্সট্রাক্ট করা (ডাইনামিক)
   const categories = [
     "All",
     ...new Set(artworks.map((art) => art.category).filter(Boolean)),
   ];
 
-  // 2. Client-side Processing
+  // ২. ক্লায়েন্ট-সাইড ফিল্টারিং এবং সর্টিং প্রসেসিং
   const processedArtworks = artworks
     .filter((art) => {
       const title = (art.title || "").toLowerCase();
-      const artist = (art.artist || art.artistName || "").toLowerCase();
+
+      // ডাটাবেজের artist_name ফিল্ড ব্যাকআপসহ হ্যান্ডেল করা হয়েছে
+      const artistName = (
+        art.artist_name ||
+        art.artist ||
+        art.artistName ||
+        "Unknown Artist"
+      ).toLowerCase();
       const query = searchQuery.toLowerCase();
-      const matchesSearch = title.includes(query) || artist.includes(query);
+      const matchesSearch = title.includes(query) || artistName.includes(query);
 
       const matchesCategory =
         selectedCategory === "All" || art.category === selectedCategory;
@@ -77,8 +83,9 @@ const BrowseArtworksPage = () => {
       if (sortBy === "price-high") {
         return (b.price || 0) - (a.price || 0);
       }
-      const dateA = a.createdAt || a._id || a.id || "";
-      const dateB = b.createdAt || b._id || b.id || "";
+      // ডাটাবেজের date_uploaded এবং createdAt দুইটাই চেক করা হচ্ছে সর্টিং-এর জন্য
+      const dateA = a.date_uploaded || a.createdAt || a._id || "";
+      const dateB = b.date_uploaded || b.createdAt || b._id || "";
       return dateB.localeCompare(dateA);
     });
 
@@ -193,8 +200,13 @@ const BrowseArtworksPage = () => {
                 art.image_url ||
                 art.image ||
                 "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=500";
+
+              // ডেটাবেজের "artist_name" কি-টি এখানে সফলভাবে ব্যবহার করা হয়েছে
               const artistName =
-                art.artist || art.artistName || "Unknown Artist";
+                art.artist_name ||
+                art.artist ||
+                art.artistName ||
+                "Unknown Artist";
 
               return (
                 <div
@@ -202,7 +214,6 @@ const BrowseArtworksPage = () => {
                   className="group bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col cursor-pointer"
                 >
                   <div className="relative w-full h-48 overflow-hidden bg-neutral-100 dark:bg-neutral-950">
-                    {/* Next.js Image ডোমেইন ত্রুটি এড়াতে স্ট্যান্ডার্ড img ব্যবহার করা হয়েছে */}
                     <img
                       src={artImage}
                       alt={art.title || "Artwork"}

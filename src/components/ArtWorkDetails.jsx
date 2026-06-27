@@ -86,7 +86,7 @@ export default function ArtworkDetail() {
 
     const newCommentObj = {
       _id: `c_${Date.now()}`,
-      username: "You (Logged In User)", // Marked as current user for editing/deletion
+      username: "You (Logged In User)",
       text: newComment,
       createdAt: new Date().toISOString(),
     };

@@ -99,9 +99,8 @@ const RegistrationPage = () => {
       if (error) {
         toast.error(error.message || "Registration failed");
       } else {
-        console.log(data);
         toast.success("Registration successful!");
-        router.push("/"); // রিডাইরেক্ট ফিক্স
+        router.push("/");
         router.refresh();
       }
     } catch (error) {

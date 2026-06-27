@@ -7,16 +7,13 @@ const ArtworksPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // ১. ব্যাকএন্ড থেকে সব আর্টওয়ার্ক লোড করা (অ্যাডমিন প্যানেলের জন্য রোল চেক বা বিশেষ কুয়েরি পাঠানো নিরাপদ)
   useEffect(() => {
     const fetchArtworks = async () => {
       try {
         setLoading(true);
 
-        // এনভায়রনমেন্ট ভ্যারিয়েবল না থাকলে লোকালহোস্ট fallback হিসেবে কাজ করবে
         const baseUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:5000";
 
-        // 🔥 ফিক্স: এখানে ?isAdminPage=true পাস করা হয়েছে
         const res = await fetch(
           `${baseUrl}/api/arthub/artwork?isAdminPage=true`,
           {

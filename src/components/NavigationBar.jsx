@@ -57,7 +57,7 @@ const NavigationBar = () => {
 
         // 🚀 ফিক্স: ইউজার আর্টিস্ট বা এডমিন হলে সাবস্ক্রিপশন চেক করার দরকার নেই
         if (role === "artist" || role === "admin") {
-          setDbUserPlan(role); // প্ল্যানের জায়গায় আর্টিস্ট/এডমিন টেক্সটই সেট করে দেওয়া হলো
+          setDbUserPlan(role); // প্ল্যানের জায়গায় আর্টিস্ট/এডমিন টেক্সটই সেট করে দেওয়া হলো
           return;
         }
 
@@ -87,7 +87,7 @@ const NavigationBar = () => {
     fetchLatestUserData();
   }, [session?.user?.id, session?.user?.email, pathname, role]); // ডিপেন্ডেন্সিতে role অ্যাড করা হলো
 
-  // সেশন ইমেজ চেঞ্জ হলে এরর রিসেট করা
+  // সেশন ইমেজ চেঞ্চ হলে এরর রিসেট করা
   const rawImageUrl =
     dbUserImage ||
     session?.user?.image ||
@@ -182,37 +182,49 @@ const NavigationBar = () => {
               <Dropdown>
                 <Dropdown.Trigger className="rounded-full cursor-pointer focus:outline-none">
                   <div>
+                    {/* 🛠️ ফিক্সড ডেক্সটপ এভাটার: ভেতরে HTML img ট্যাগ যোগ করা হয়েছে */}
                     <Avatar
-                      src={
-                        userImageUrl && !imageError ? userImageUrl : undefined
-                      }
                       fallback={
                         <span className="font-semibold text-sm">
                           {userInitial}
                         </span>
                       }
-                      className="bg-primary text-primary-foreground font-semibold cursor-pointer border border-border"
-                      onError={() => setImageError(true)}
-                    />
+                      className="bg-primary text-primary-foreground font-semibold cursor-pointer border border-border overflow-hidden"
+                    >
+                      {userImageUrl && !imageError && (
+                        <img
+                          src={userImageUrl}
+                          alt={userName}
+                          className="w-full h-full object-cover"
+                          onError={() => setImageError(true)}
+                        />
+                      )}
+                    </Avatar>
                   </div>
                 </Dropdown.Trigger>
 
                 <Dropdown.Popover className="bg-popover text-popover-foreground border border-border">
                   <div className="px-3 pt-3 pb-2 border-b border-border/50">
                     <div className="flex items-center gap-3">
+                      {/* 🛠️ ফিক্সড ড্রপডাউন প্রোফাইল এভাটার */}
                       <Avatar
-                        src={
-                          userImageUrl && !imageError ? userImageUrl : undefined
-                        }
+                        size="sm"
                         fallback={
                           <span className="font-medium text-xs">
                             {userInitial}
                           </span>
                         }
-                        size="sm"
-                        className="bg-primary text-primary-foreground border border-border"
-                        onError={() => setImageError(true)}
-                      />
+                        className="bg-primary text-primary-foreground border border-border overflow-hidden"
+                      >
+                        {userImageUrl && !imageError && (
+                          <img
+                            src={userImageUrl}
+                            alt={userName}
+                            className="w-full h-full object-cover"
+                            onError={() => setImageError(true)}
+                          />
+                        )}
+                      </Avatar>
                       <div className="flex flex-col gap-0.5 min-w-0">
                         {userName && (
                           <p className="text-sm leading-5 font-semibold flex items-center gap-2">
@@ -343,15 +355,22 @@ const NavigationBar = () => {
           ) : session ? (
             <div className="space-y-3 px-3">
               <div className="flex items-center gap-3 py-2">
+                {/* 🛠️ ফিক্সড মোবাইল এভাটার */}
                 <Avatar
-                  src={userImageUrl && !imageError ? userImageUrl : undefined}
-                  showFallback
+                  className="w-10 h-10 bg-primary text-primary-foreground border border-border overflow-hidden"
                   fallback={
                     <span className="font-bold text-base">{userInitial}</span>
                   }
-                  className="w-10 h-10 bg-primary text-primary-foreground border border-border"
-                  onError={() => setImageError(true)}
-                />
+                >
+                  {userImageUrl && !imageError && (
+                    <img
+                      src={userImageUrl}
+                      alt={userName}
+                      className="w-full h-full object-cover"
+                      onError={() => setImageError(true)}
+                    />
+                  )}
+                </Avatar>
                 <div className="min-w-0 flex-1">
                   {userName && (
                     <p className="text-sm font-semibold flex items-center gap-2">
