@@ -1,8 +1,7 @@
-export const dynamic = "force-dynamic";
-("use client");
+"use client";
 
 import { useForm } from "react-hook-form";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   ImageIcon,
   DollarSign,

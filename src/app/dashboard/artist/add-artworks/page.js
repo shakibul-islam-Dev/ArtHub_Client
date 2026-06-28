@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import React from "react";
 import AddProductForm from "./add-artworks";
 import { auth } from "@/lib/auth";
