@@ -24,7 +24,6 @@ export default function ArtworkForm({ onSuccess, initialData }) {
     defaultValues: initialData || {},
   });
 
-  // এডিট মোড হলে ফর্ম রিসেট করবে
   useEffect(() => {
     if (initialData) reset(initialData);
   }, [initialData, reset]);
@@ -32,7 +31,6 @@ export default function ArtworkForm({ onSuccess, initialData }) {
   const onSubmit = async (data) => {
     let imageUrl = data.imageUrl || "";
 
-    // যদি নতুন ইমেজ আপলোড করা হয়
     if (data.image && data.image.length > 0) {
       const formData = new FormData();
       formData.append("image", data.image[0]);

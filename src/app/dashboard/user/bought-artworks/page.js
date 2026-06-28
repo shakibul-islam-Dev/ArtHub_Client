@@ -8,20 +8,18 @@ import { Calendar, Tag } from "lucide-react";
 
 const BoughtArtworksPage = () => {
   const { data: session, isPending: sessionLoading } = useSession();
-  const apiUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:5000";
+  const apiUrl = process.env.NEXT_PUBLIC_URL;
 
-  // States
   const [boughtArtworks, setBoughtArtworks] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // ডাটাবেজ থেকে কেনা আর্টওয়ার্কের ডেটা নিয়ে আসা
   useEffect(() => {
     const fetchBoughtArtworks = async () => {
       if (!session?.user?.id) return;
 
       try {
         setLoading(true);
-        // আপনার ট্রানজেকশন হিস্ট্রি এপিআই কল করা হচ্ছে (যা আমরা একটু আগে ব্যাকএন্ডে ফিক্স করেছি)
+
         const res = await fetch(
           `${apiUrl}/api/arthub/checkout/history/${session.user.id}`,
         );
@@ -40,7 +38,6 @@ const BoughtArtworksPage = () => {
     fetchBoughtArtworks();
   }, [session?.user?.id, apiUrl]);
 
-  // সেশন বা এপিআই লোড হওয়ার মেইন স্পিনার
   if (sessionLoading || loading) {
     return (
       <div className="min-h-screen flex flex-col gap-3 items-center justify-center bg-white dark:bg-neutral-950">
@@ -91,7 +88,6 @@ const BoughtArtworksPage = () => {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {boughtArtworks.map((item) => {
-            // পপুলেট হওয়া অবজেক্ট থেকে আর্টওয়ার্কের মূল ডাটা রিড করা হচ্ছে
             const art = item.artworkId || {};
             const artworkId = art._id || item.artworkId;
             const artworkTitle = art.title || "Deleted Artwork";
@@ -149,20 +145,6 @@ const BoughtArtworksPage = () => {
                         ${item.amount}
                       </p>
                     </div>
-
-                    {/* ডিটেইলস দেখার লিংক (যদি আর্টওয়ার্ক ডিলিট না হয়ে থাকে) */}
-                    {art._id ? (
-                      <Link
-                        href={`/artwork/${artworkId}`}
-                        className="inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium text-neutral-900 dark:text-neutral-100 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-xl transition-all duration-150"
-                      >
-                        View Details
-                      </Link>
-                    ) : (
-                      <span className="text-[10px] text-neutral-400 dark:text-neutral-600 italic">
-                        Unavailable
-                      </span>
-                    )}
                   </div>
                 </div>
               </div>

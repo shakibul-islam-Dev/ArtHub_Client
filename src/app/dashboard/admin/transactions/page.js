@@ -7,17 +7,16 @@ const TransactionsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // ব্যাকএন্ড থেকে ট্রানজেকশন ডেটা লোড করা
   useEffect(() => {
     const fetchTransactions = async () => {
       try {
         const res = await fetch(
-          "http://localhost:5000/api/arthub/transactions",
+          `${process.env.NEXT_PUBLIC_URL}/api/arthub/transactions`,
         );
         if (!res.ok) throw new Error("Failed to fetch transactions");
 
         const resData = await res.json();
-        // রেসপন্স অবজেক্ট বা অ্যারে হ্যান্ডলিং সেফটি ফিল্টার
+
         const data = Array.isArray(resData) ? resData : resData.data || [];
         setTransactions(data);
       } catch (err) {
@@ -33,7 +32,7 @@ const TransactionsPage = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-transparent text-neutral-500">
-        <div className="animate-pulse">লেনদেনের তথ্য লোড হচ্ছে...</div>
+        <div className="animate-pulse">Transactions Information Loading...</div>
       </div>
     );
   }
@@ -85,12 +84,11 @@ const TransactionsPage = () => {
                       colSpan="6"
                       className="p-8 text-center text-neutral-500"
                     >
-                      এখনো কোনো লেনদেন সম্পন্ন হয়নি।
+                      No Transctions Yet.
                     </td>
                   </tr>
                 ) : (
                   transactions.map((txn) => {
-                    // ডেট ফরম্যাটিং সেফটি লজিক
                     const txnDate = txn.createdAt || txn.date;
                     const formattedDate = txnDate
                       ? new Date(txnDate).toLocaleDateString("en-US", {
@@ -100,22 +98,15 @@ const TransactionsPage = () => {
                         })
                       : "N/A";
 
-                    // ==========================================
-                    // পুরনো ডেটার জন্য সেফটি অ্যান্ড ডায়নামিক ফলব্যাক ফিল্টার
-                    // ==========================================
-
-                    // ১. আর্টওয়ার্কের নাম টাইটেল থেকে অথবা অবজেক্ট পপুলেশন থাকলে সেখান থেকে আনা
                     const displayTitle =
                       txn.artwork_title ||
                       txn.title ||
                       (txn.artworkId && txn.artworkId.title) ||
                       "Exclusive Artwork";
 
-                    // ২. বায়ারের ইমেইল আইডি জেনারেট করা (পুরনো ডেটাতে এটি userEmail হিসেবে আছে)
                     const displayBuyerEmail =
                       txn.buyer_email || txn.userEmail || "No Email";
 
-                    // ৩. বায়ারের নাম (ইমেইলের প্রথম অংশ কেটে সুন্দর নাম জেনারেট করা যদি buyer_name না থাকে)
                     const defaultName =
                       displayBuyerEmail !== "No Email"
                         ? displayBuyerEmail
@@ -127,7 +118,6 @@ const TransactionsPage = () => {
                     const displayBuyerName =
                       txn.buyer_name || txn.user || defaultName;
 
-                    // ৪. আর্টিস্টের ইমেইল (অবজেক্ট পপুলেশন থেকে খোঁজা, না পেলে বায়ারের ইমেইলের সাথে কনফ্লিক্ট এড়াতে সেফটি দেওয়া)
                     const displayArtistEmail =
                       txn.artist_email ||
                       txn.email ||
@@ -139,17 +129,14 @@ const TransactionsPage = () => {
                         key={txn._id || txn.id}
                         className="hover:bg-neutral-50/50 dark:hover:bg-neutral-800/30 transition-colors"
                       >
-                        {/* ১. ট্রানজেকশন আইডি */}
                         <td className="p-4 text-neutral-500 dark:text-neutral-400 font-mono text-xs">
                           {txn._id || txn.id}
                         </td>
 
-                        {/* ২. আর্টওয়ার্কের নাম */}
                         <td className="p-4 text-neutral-900 dark:text-neutral-100 font-medium">
                           {displayTitle}
                         </td>
 
-                        {/* ৩. ক্রেতার নাম ও ইমেইল */}
                         <td className="p-4">
                           <div className="text-neutral-900 dark:text-neutral-100 font-medium">
                             {displayBuyerName}
@@ -159,12 +146,10 @@ const TransactionsPage = () => {
                           </div>
                         </td>
 
-                        {/* ৪. আর্টিস্টের ইমেইল */}
                         <td className="p-4 text-neutral-600 dark:text-neutral-400">
                           {displayArtistEmail}
                         </td>
 
-                        {/* ৫. টাকার পরিমাণ */}
                         <td className="p-4 text-neutral-900 dark:text-neutral-50 font-semibold">
                           $
                           {Number(
@@ -172,7 +157,6 @@ const TransactionsPage = () => {
                           ).toLocaleString()}
                         </td>
 
-                        {/* ৬. তারিখ */}
                         <td className="p-4 text-neutral-600 dark:text-neutral-400">
                           {formattedDate}
                         </td>

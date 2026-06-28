@@ -1,20 +1,37 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { authClient } from "@/lib/auth-client";
 
 const UsersPage = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // ১. সব ইউজার লোড করা (UserController.getAll)
+  // Modal States
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
+
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         setLoading(true);
-        const baseUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:5000";
+
+        const { data: tokenData, error: tokenError } = await authClient.token();
+        if (tokenError || !tokenData?.token) {
+          throw new Error("Authentication token missing. Please log in again.");
+        }
+
+        const jwtToken = tokenData.token;
+        const baseUrl = process.env.NEXT_PUBLIC_URL;
+
         const res = await fetch(`${baseUrl}/api/arthub/user`, {
+          method: "GET",
           cache: "no-store",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${jwtToken}`,
+          },
         });
 
         if (!res.ok) throw new Error("Failed to fetch users");
@@ -32,14 +49,21 @@ const UsersPage = () => {
     fetchUsers();
   }, []);
 
-  // ২. ইউজারের রোল পরিবর্তন করা (UserController.update মেথড ব্যবহার করে)
   const handleRoleChange = async (userId, newRole) => {
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:5000";
-      const res = await fetch(`${baseUrl}/api/arthub/users/${userId}`, {
+      const { data: tokenData, error: tokenError } = await authClient.token();
+      if (tokenError || !tokenData?.token) {
+        throw new Error("Action denied: Token missing.");
+      }
+
+      const jwtToken = tokenData.token;
+      const baseUrl = process.env.NEXT_PUBLIC_URL;
+
+      const res = await fetch(`${baseUrl}/api/arthub/user/${userId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${jwtToken}`,
         },
         body: JSON.stringify({ role: newRole }),
       });
@@ -54,22 +78,39 @@ const UsersPage = () => {
     }
   };
 
-  // ৩. ইউজার ডিলিট করা (UserController.delete)
-  const handleDeleteUser = async (userId) => {
-    if (!window.confirm("Are you sure you want to delete this user/artist?"))
-      return;
+  const openDeleteModal = (user) => {
+    setUserToDelete(user);
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
 
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:5000";
+      const { data: tokenData, error: tokenError } = await authClient.token();
+      if (tokenError || !tokenData?.token) {
+        throw new Error("Action denied: Token missing.");
+      }
 
-      // 🔥 ফিক্সড: এন্ডপয়েন্ট 'users' থেকে পরিবর্তন করে 'user' করা হয়েছে
-      const res = await fetch(`${baseUrl}/api/arthub/user/${userId}`, {
-        method: "DELETE",
-      });
+      const jwtToken = tokenData.token;
+      const baseUrl = process.env.NEXT_PUBLIC_URL;
+
+      const res = await fetch(
+        `${baseUrl}/api/arthub/user/${userToDelete._id}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${jwtToken}`,
+          },
+        },
+      );
 
       if (!res.ok) throw new Error("Failed to delete user");
 
-      setUsers((prev) => prev.filter((u) => u._id !== userId));
+      setUsers((prev) => prev.filter((u) => u._id !== userToDelete._id));
+      setIsModalOpen(false);
+      setUserToDelete(null);
     } catch (err) {
       alert(`Error deleting user: ${err.message}`);
     }
@@ -78,9 +119,7 @@ const UsersPage = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-transparent text-neutral-500">
-        <div className="animate-pulse font-medium">
-          ইউজারদের তথ্য লোড হচ্ছে...
-        </div>
+        <div className="animate-pulse font-medium">User Data is Loading...</div>
       </div>
     );
   }
@@ -129,7 +168,7 @@ const UsersPage = () => {
                       colSpan="5"
                       className="p-8 text-center text-neutral-500"
                     >
-                      কোনো ইউজার পাওয়া যায়নি।
+                      No User Found..
                     </td>
                   </tr>
                 ) : (
@@ -172,7 +211,7 @@ const UsersPage = () => {
                       </td>
                       <td className="p-4">
                         <button
-                          onClick={() => handleDeleteUser(user._id)}
+                          onClick={() => openDeleteModal(user)}
                           className="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white border border-red-500/20 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer"
                         >
                           Delete
@@ -186,6 +225,46 @@ const UsersPage = () => {
           </div>
         </div>
       </div>
+
+      {/* ================= Custom Tailwind Confirmation Modal ================= */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 max-w-sm w-full shadow-xl space-y-4 transition-all transform scale-100">
+            <div className="text-center sm:text-left space-y-2">
+              <h3 className="text-lg font-bold text-neutral-900 dark:text-neutral-50">
+                Confirm Deletion
+              </h3>
+              <p className="text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed">
+                Are you sure you want to delete{" "}
+                <span className="font-semibold text-neutral-900 dark:text-neutral-100">
+                  &quot;{userToDelete?.name || userToDelete?.email}"
+                </span>
+                ? This action cannot be undone.
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsModalOpen(false);
+                  setUserToDelete(null);
+                }}
+                className="w-full sm:w-auto px-4 py-2 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 font-medium text-sm rounded-xl transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteUser}
+                className="w-full sm:w-auto px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium text-sm rounded-xl transition cursor-pointer"
+              >
+                Delete User
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

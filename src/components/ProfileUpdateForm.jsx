@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { useRouter } from "next/navigation";
+import { authClient } from "@/lib/auth-client";
 
 const ProfileUpdateForm = ({ initialData, userId, role }) => {
   const router = useRouter();
@@ -56,19 +57,24 @@ const ProfileUpdateForm = ({ initialData, userId, role }) => {
     setImageError(false);
   }, [imageUrl]);
 
-  // 🎯 আপনার ডিফাইন করা ভ্যারিয়েবল (ডট মিসিং ফিক্সড)
   const imageBB = process.env.NEXT_PUBLIC_IMAGE_UPLOAD_API_KEY;
 
   const onSubmit = async (data) => {
     setStatusMessage({ type: "", text: "" });
     try {
+      const { data: tokenData, error: tokenError } = await authClient.token();
+
+      if (tokenError || !tokenData?.token) {
+        throw new Error("Authentication token not found. Please log in again.");
+      }
+
+      const jwtToken = tokenData.token;
       const updateData = { ...data };
+
       if (!updateData.password) {
         delete updateData.password;
       }
 
-      // 🎯 যদি ইনপুটে নতুন কোনো ফাইলের অবজেক্ট বা ইমেজ ইউআরএল থাকে, সেটাকে ImgBB তে আপলোড করার লজিক
-      // (যদি আপনি ইনপুট ফিল্ডে সরাসরি ফাইল পাস করেন)
       if (data.image && data.image[0] instanceof File) {
         const formData = new FormData();
         formData.append("image", data.image[0]);
@@ -83,7 +89,7 @@ const ProfileUpdateForm = ({ initialData, userId, role }) => {
 
         if (imgbbRes.ok) {
           const imgbbData = await imgbbRes.json();
-          updateData.image = imgbbData.data.display_url; // আপলোডেড CDN লিঙ্ক সেট হলো
+          updateData.image = imgbbData.data.display_url;
         }
       }
 
@@ -93,21 +99,32 @@ const ProfileUpdateForm = ({ initialData, userId, role }) => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${jwtToken}`,
         },
         body: JSON.stringify(updateData),
       });
 
-      if (!response.ok) throw new Error("Failed to update profile");
+      if (!response.ok) throw new Error("Failed to update profile on backend");
+
+      await authClient.updateUser({
+        name: updateData.name,
+        image: updateData.image || undefined,
+      });
 
       setStatusMessage({
         type: "success",
         text: "Profile updated successfully!",
       });
 
+      window.dispatchEvent(new Event("planUpdated"));
+
       router.refresh();
     } catch (error) {
       console.error("Update failed:", error);
-      setStatusMessage({ type: "error", text: "Something went wrong!" });
+      setStatusMessage({
+        type: "error",
+        text: error.message || "Something went wrong!",
+      });
     }
   };
 

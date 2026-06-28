@@ -25,12 +25,10 @@ export default function AddProductForm({ artist }) {
   const DATABASE_API_URL = process.env.NEXT_PUBLIC_URL || "";
   const IMGBB_API_KEY = process.env.NEXT_PUBLIC_IMAGE_UPLOAD_API_KEY;
 
- 
   const currentArtistName = artist?.name
     ? String(artist.name).trim()
     : "Unknown Artist";
   const currentArtistImage = artist?.image ? String(artist.image).trim() : "";
-
 
   const currentArtistId = artist?.id
     ? String(artist.id).trim()
@@ -79,7 +77,6 @@ export default function AddProductForm({ artist }) {
         return;
       }
 
-      // ১. ImgBB-তে ইমেজ আপলোড
       const formData = new FormData();
       formData.append("image", file);
 
@@ -93,7 +90,6 @@ export default function AddProductForm({ artist }) {
       const imgData = await res.json();
       const imageUrl = imgData.data.url;
 
-      // 🛠️ নিখুঁত পেলোড (যা ব্যাকএন্ডের সব কন্ডিশন ম্যাচ করাবে)
       const payload = {
         title: String(data.title).trim(),
         image_url: String(imageUrl).trim(),
@@ -101,17 +97,15 @@ export default function AddProductForm({ artist }) {
         price: Number(data.price),
         category: String(data.category).trim(),
 
-        // আর্টিস্টের তথ্য সরাসরি পাঠানো হচ্ছে
         artist_id: currentArtistId,
         artist_name: String(currentArtistName).trim(),
         artist_profile_url: String(currentArtistImage).trim(),
 
-        // ব্যাকএন্ড কন্ট্রোলারের রিজিড কন্ডিশন (user?.name) স্যাটিসফাই করার জন্য ব্যাকআপ
         user: {
           id: currentArtistId,
           name: String(currentArtistName).trim(),
           image: String(currentArtistImage).trim(),
-          role: "artist", // আপনার কন্ট্রোলারের 'Forbidden access' চেক পার করার জন্য
+          role: "artist",
         },
 
         isSold: false,
@@ -119,7 +113,6 @@ export default function AddProductForm({ artist }) {
         createdAt: new Date().toISOString(),
       };
 
-      // ২. ডাটাবেজ API কল
       const response = await fetch(`${DATABASE_API_URL}/api/arthub/artwork`, {
         method: "POST",
         headers: {
@@ -172,7 +165,6 @@ export default function AddProductForm({ artist }) {
           </div>
         </div>
 
-        {/* 👤 Artist Badge: এখানে আর্টিস্টের নাম ও ছবি ডাইনামিকালি দেখাবে */}
         <div className="flex items-center gap-2 bg-muted/50 px-3 py-1.5 rounded-full border border-border/60">
           <Avatar
             src={currentArtistImage || undefined}

@@ -14,7 +14,7 @@ export default function HeroSection() {
     const getData = async () => {
       try {
         const response = await fetch(
-          "http://localhost:5000/api/arthub/artwork",
+          ` ${process.env.NEXT_PUBLIC_URL}/api/arthub/artwork`,
         );
         if (!response.ok) {
           throw new Error("Failed to fetch artworks");
@@ -50,13 +50,11 @@ export default function HeroSection() {
     );
   };
 
-  // কারেন্ট স্লাইডের ইমেজ URL বের করার মেথড
   const currentBgImage =
     artworks[currentIndex]?.image_url || artworks[currentIndex]?.image || "";
 
   return (
     <section className="relative w-full min-h-[85vh] flex items-center justify-center overflow-hidden bg-gray-50 dark:bg-gray-950 transition-colors duration-300">
-      {/* স্লাইডার ব্যাকগ্রাউন্ড ব্লার ওভারলে */}
       <AnimatePresence mode="wait">
         {currentBgImage && (
           <motion.div
@@ -71,7 +69,6 @@ export default function HeroSection() {
         )}
       </AnimatePresence>
 
-      {/* Content Wrapper */}
       <div className="relative z-10 max-w-5xl mx-auto px-6 text-center flex flex-col items-center w-full py-12">
         {/* Badge */}
         <motion.div
@@ -123,7 +120,6 @@ export default function HeroSection() {
         </motion.div>
       </div>
 
-      {/* স্লাইডার নেভিগেশন কন্ট্রোল (বাম ও ডান বাটন) */}
       {artworks.length > 1 && (
         <>
           <button
@@ -141,7 +137,6 @@ export default function HeroSection() {
         </>
       )}
 
-      {/* স্লাইডার ডট ইন্ডিকেটরস */}
       {artworks.length > 1 && (
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex gap-2">
           {artworks.map((_, index) => (

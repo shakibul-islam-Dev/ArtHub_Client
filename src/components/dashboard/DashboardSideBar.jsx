@@ -42,12 +42,28 @@ export default function DashboardSideBar({ session: initialSession }) {
     const fetchLatestUserData = async () => {
       if (!currentSession?.user?.id || !currentSession?.user?.email) return;
 
-      const baseUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:5000";
+      const baseUrl = process.env.NEXT_PUBLIC_URL;
 
       try {
-        // ১. ইউজারের বেসিক প্রোফাইল ডেটা আনা
+        const { data: tokenData, error: tokenError } = await authClient.token();
+
+        if (tokenError || !tokenData?.token) {
+          console.error("Failed to fetch auth token on sidebar:", tokenError);
+          return;
+        }
+
+        const jwtToken = tokenData.token;
+
         const userRes = await fetch(
           `${baseUrl}/api/arthub/user/${currentSession.user.id}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              "Cache-Control": "no-cache",
+              Authorization: `Bearer ${jwtToken}`,
+            },
+          },
         );
         if (userRes.ok) {
           const data = await userRes.json();
@@ -61,33 +77,26 @@ export default function DashboardSideBar({ session: initialSession }) {
           if (fetchedName) setDbUserName(fetchedName);
         }
 
-        // আর্টিস্ট বা এডমিন হলে সাবস্ক্রিপশন চেক করার দরকার নেই
         if (role === "artist" || role === "admin") {
           setDbUserPlan(role);
           return;
         }
 
-        // ২. সাবস্ক্রিপশন ডেটা আনা
         const subRes = await fetch(
           `${baseUrl}/api/arthub/subscriptions/${currentSession.user.email}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              "Cache-Control": "no-cache",
+              Authorization: `Bearer ${jwtToken}`,
+            },
+          },
         );
         if (subRes.ok) {
           const subData = await subRes.json();
-
-          // বিভিন্ন সম্ভাব্য স্ট্যাটাস হ্যান্ডেল করার জন্য (complete, active, succeeded)
-          const status = subData?.data?.status?.toLowerCase();
-          const isSubscribed =
-            status === "complete" ||
-            status === "active" ||
-            status === "succeeded";
-
-          if (subData?.success && isSubscribed) {
-            // planName, plan_name বা plan যেকোনো ফরমেটে ডেটা আসলে তা রিসিভ করবে
-            const planName =
-              subData.data.planName ||
-              subData.data.plan_name ||
-              subData.data.plan;
-            setDbUserPlan(planName || "Free");
+          if (subData?.success && subData?.data?.status === "complete") {
+            setDbUserPlan(subData.data.planName || "Free");
           } else {
             setDbUserPlan("Free");
           }
@@ -100,8 +109,7 @@ export default function DashboardSideBar({ session: initialSession }) {
     };
 
     fetchLatestUserData();
-    // 💡 pathname বাদ দেওয়া হয়েছে যাতে পেজ চেঞ্জ হলে ফালতু রিকোয়েস্ট না যায়
-  }, [currentSession?.user?.id, currentSession?.user?.email, role]);
+  }, [currentSession?.user?.id, currentSession?.user?.email, pathname, role]);
 
   useEffect(() => {
     setIsOpen(false);
@@ -336,7 +344,6 @@ export default function DashboardSideBar({ session: initialSession }) {
           <div className="flex justify-between items-center pb-4 border-b border-border/50">
             <Link
               href="/"
-              onClick={() => setIsOpen(false)}
               className="flex items-center gap-3 min-w-0 hover:opacity-85 transition-opacity cursor-pointer"
             >
               {userImage ? (
@@ -385,7 +392,6 @@ export default function DashboardSideBar({ session: initialSession }) {
                 <Link
                   key={`mobile-${item.href}-${index}`}
                   href={item.href}
-                  onClick={() => setIsOpen(false)}
                   className={`p-3 rounded-lg text-sm font-medium transition-colors flex items-center gap-3 ${
                     isActive
                       ? "bg-accent text-accent-foreground font-semibold"

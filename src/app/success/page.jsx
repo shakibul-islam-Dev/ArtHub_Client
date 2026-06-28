@@ -51,7 +51,7 @@ export default async function Success({ searchParams }) {
         }),
       });
     } catch (err) {
-      console.error("❌ Failed to sync with backend DB:", err.message);
+      console.error("Failed to sync with backend DB:", err.message);
     }
 
     return (

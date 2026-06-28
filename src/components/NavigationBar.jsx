@@ -20,8 +20,6 @@ import { Button } from "@/components/ui/button";
 const NavigationBar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [imageError, setImageError] = useState(false);
-
-  // ডাটাবেজ থেকে রিয়েল-টাইম ডেটা সিঙ্ক করার জন্য স্টেট
   const [dbUserName, setDbUserName] = useState(null);
   const [dbUserImage, setDbUserImage] = useState(null);
   const [dbUserPlan, setDbUserPlan] = useState("Free");
@@ -32,17 +30,35 @@ const NavigationBar = () => {
   const { data: session, isPending } = useSession();
   const role = session?.user?.role?.toLowerCase();
 
-  // 🚀 ফিক্স: ফাংশনটিকে useCallback দিয়ে বাইরে নিয়ে আসা হয়েছে যাতে ইভেন্ট লিসেনারও এটি কল করতে পারে
-  const fetchLatestUserData = useCallback(async () => {
-    if (!session?.user?.id || !session?.user?.email) return;
+  const userId = session?.user?.id || "";
+  const userEmail = session?.user?.email || "";
 
-    const baseUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:5000";
+  const fetchLatestUserData = useCallback(async () => {
+    if (!userId || !userEmail) return;
+
+    const baseUrl = process.env.NEXT_PUBLIC_URL;
 
     try {
-      // ১. ইউজারের প্রোফাইল ডেটা আনা
-      const userRes = await fetch(
-        `${baseUrl}/api/arthub/user/${session.user.id}`,
-      );
+      // Better-Auth থেকে লাইভ JWT টোকেন নেওয়া হচ্ছে
+      const { data: tokenData, error: tokenError } = await authClient.token();
+
+      if (tokenError || !tokenData?.token) {
+        console.error("Failed to fetch auth token:", tokenError);
+        return;
+      }
+
+      const jwtToken = tokenData.token;
+
+      // ১. ইউজারের প্রোফাইল ডেটা আনা (Bearer Token সহ)
+      const userRes = await fetch(`${baseUrl}/api/arthub/user/${userId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "no-cache",
+          Authorization: `Bearer ${jwtToken}`, // 👈 JWT টোকেন পাঠানো হলো
+        },
+      });
+
       if (userRes.ok) {
         const data = await userRes.json();
         const userData = data?.success ? data.data : data;
@@ -54,21 +70,27 @@ const NavigationBar = () => {
         if (fetchedName) setDbUserName(fetchedName);
       }
 
-      // ইউজার আর্টিস্ট বা এডমিন হলে সাবস্ক্রিপশন চেক করার দরকার নেই
       if (role === "artist" || role === "admin") {
         setDbUserPlan(role);
         return;
       }
 
-      // ২. সাবস্ক্রিপশন এপিআই থেকে লাইভ প্ল্যান আনা (সঠিক পাথ ফিক্স করা হয়েছে)
       const subRes = await fetch(
-        `${baseUrl}/api/arthub/subscriptions/${session.user.email}`,
+        `${baseUrl}/api/arthub/subscriptions/${userEmail}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "Cache-Control": "no-cache",
+            Authorization: `Bearer ${jwtToken}`,
+          },
+        },
       );
+
       if (subRes.ok) {
         const subData = await subRes.json();
         const subscription = subData?.data || subData;
 
-        // স্ট্যাটাস complete বা active হলে প্ল্যান সেট হবে
         const isSubscribed =
           subscription?.status === "complete" ||
           subscription?.status === "active";
@@ -90,17 +112,17 @@ const NavigationBar = () => {
       );
       setDbUserPlan("Free");
     }
-  }, [session?.user?.id, session?.user?.email, role]);
+  }, [userId, userEmail, role]);
 
-  // ইনিশিয়াল ডেটা ফেচিং ইফেক্ট
   useEffect(() => {
-    fetchLatestUserData();
-  }, [fetchLatestUserData, pathname]);
+    if (userId && userEmail) {
+      fetchLatestUserData();
+    }
+  }, [userId, userEmail, pathname, fetchLatestUserData]);
 
-  // 🚀 রিয়েল-টাইম প্ল্যান চেঞ্জ ট্র্যাক করার জন্য কাস্টম ইভেন্ট লিসেনার
   useEffect(() => {
     const handlePlanUpdate = () => {
-      fetchLatestUserData(); // প্ল্যান চেঞ্জ হওয়ার ইভেন্ট পেলেই আবার ডেটা টানবে
+      fetchLatestUserData();
     };
 
     window.addEventListener("planUpdated", handlePlanUpdate);
@@ -109,7 +131,6 @@ const NavigationBar = () => {
     };
   }, [fetchLatestUserData]);
 
-  // সেশন ইমেজ চেঞ্জ হলে এরর রিসেট করা
   const rawImageUrl =
     dbUserImage ||
     session?.user?.image ||
@@ -125,11 +146,12 @@ const NavigationBar = () => {
     return null;
   }
 
-  // Handle Logout
   const handleLogout = async () => {
     await authClient.signOut({
       fetchOptions: {
         onSuccess: () => {
+          setDbUserName(null);
+          setDbUserImage(null);
           router.push("/login");
           router.refresh();
         },
@@ -141,9 +163,7 @@ const NavigationBar = () => {
   const settingsPath = `/settings`;
   const isActive = (path) => pathname === path;
 
-  // ফাইনাল ডাটা রেজোলিউশন
   const userName = dbUserName || session?.user?.name || "User";
-  const userEmail = session?.user?.email;
   const userPlan = dbUserPlan;
   const userInitial = userName?.trim().charAt(0).toUpperCase() || "U";
 

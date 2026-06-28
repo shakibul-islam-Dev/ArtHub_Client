@@ -26,13 +26,13 @@ export default async function SettingsPage() {
       userData = await res.json();
     }
   } catch (error) {
-    console.error("Express backend থেকে ডাটা ফেচ করতে সমস্যা হয়েছে:", error);
+    console.error("backend Failed", error);
   }
 
   return (
     <div className="max-w-2xl mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">
-        প্রোফাইল সেটিংস ({loggedInUser.role || "User"})
+        Profile Settings ({loggedInUser.role || "User"})
       </h1>
 
       <ProfileUpdateForm

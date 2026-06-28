@@ -33,7 +33,6 @@ const EditArtworkPage = () => {
     },
   });
 
-  // ১. পুরাতন ডেটা ফেচ করা
   useEffect(() => {
     if (!id) return;
 
@@ -57,7 +56,6 @@ const EditArtworkPage = () => {
         if (finalData) {
           setOriginalData(finalData);
 
-          // ফর্ম ভ্যালু সেট করা (প্রাইস স্ট্রিংয়ে কনভার্ট করা হয়েছে ইনপুট ফিল্ড ক্র্যাশ এড়াতে)
           setValue("title", finalData.title || "");
           setValue("description", finalData.description || "");
           setValue(
@@ -86,12 +84,10 @@ const EditArtworkPage = () => {
     };
   }, [id, setValue, router]);
 
-  // ২. সাবমিট হ্যান্ডলার
   const onFormSubmit = async (formData) => {
     try {
       setUpdating(true);
 
-      // পূর্বের মেটাডেটা অক্ষুণ্ণ রেখে শুধু ফর্মের ডেটা মডিফাই করা
       const payload = {
         ...originalData,
         title: String(formData.title).trim(),
@@ -100,7 +96,7 @@ const EditArtworkPage = () => {
         category: String(formData.category).trim(),
         image_url: String(formData.image_url).trim(),
         artist_profile_url: String(formData.artist_profile_url).trim(),
-        updatedAt: new Date().toISOString(), // আপডেট টাইমস্ট্যাম্প
+        updatedAt: new Date().toISOString(),
       };
 
       const res = await fetch(
@@ -116,7 +112,6 @@ const EditArtworkPage = () => {
 
       const response = await res.json();
 
-      // এক্সপ্রেস এবং মঙ্গোডিবি রেসপন্স অবজেক্টের স্ট্রং এবং সেফ কন্ডিশন চেক
       if (
         res.ok &&
         (response.success ||

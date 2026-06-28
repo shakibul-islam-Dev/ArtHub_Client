@@ -82,7 +82,6 @@ export default function SubscriptionCards({ activePlanName }) {
                 ${tier.popular && !isCurrent ? "border-violet-500 shadow-md shadow-violet-500/10 scale-105 md:scale-105 z-10" : "border-border shadow-sm hover:scale-[1.02]"}
               `}
             >
-              {/* মিক্স ব্লেন্ড ওভারলে: ইমেজ থিম অনুযায়ী ও ব্যাকগ্রাউন্ড কালার ডাইনামিক করতে */}
               <div
                 className={`absolute inset-0 bg-gradient-to-b ${tier.gradient} mix-blend-multiply opacity-90 pointer-events-none`}
               />

@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 
 async function getSalesData(artistId) {
-  const baseUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:5000";
+  const baseUrl = process.env.NEXT_PUBLIC_URL;
   try {
     const idString =
       typeof artistId === "object" && artistId?.$oid ? artistId.$oid : artistId;

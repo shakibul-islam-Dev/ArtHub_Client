@@ -18,15 +18,14 @@ const PurchasedHistoryPage = () => {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("session_id");
 
-  const apiUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:5000";
+  const apiUrl = process.env.NEXT_PUBLIC_URL;
 
   // States
   const [purchases, setPurchases] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [verifyStatus, setVerifyStatus] = useState(null); // 'success' | 'error' | null
+  const [verifyStatus, setVerifyStatus] = useState(null);
   const [verifyMessage, setVerifyMessage] = useState("");
 
-  // ১. পেমেন্ট কনফার্মেশন এবং ট্রানজেকশন হিস্ট্রি লোড করার ইফেক্ট
   useEffect(() => {
     const handlePaymentAndFetchHistory = async () => {
       if (!session?.user?.id) return;
@@ -34,7 +33,6 @@ const PurchasedHistoryPage = () => {
       try {
         setLoading(true);
 
-        // ক) যদি ইউআরএল-এ স্ট্রাইপ সেশন আইডি থাকে, তবে আগে পেমেন্টটি ভেরিফাই ও সেভ করব
         if (sessionId) {
           setVerifyStatus("verifying");
           setVerifyMessage("Verifying your payment, please wait...");
@@ -62,7 +60,6 @@ const PurchasedHistoryPage = () => {
           }
         }
 
-        // খ) এবার ডাটাবেজ থেকে এই ইউজারের সম্পূর্ণ ট্রানজেকশন হিস্ট্রি তুলে আনব
         const historyRes = await fetch(
           `${apiUrl}/api/arthub/checkout/history/${session.user.id}`,
         );
@@ -85,7 +82,6 @@ const PurchasedHistoryPage = () => {
     handlePaymentAndFetchHistory();
   }, [session?.user?.id, sessionId, apiUrl]);
 
-  // সেশন বা হিস্ট্রি লোড হওয়ার মেইন লোডার
   if (sessionLoading || (loading && purchases.length === 0 && !verifyStatus)) {
     return (
       <div className="min-h-screen flex flex-col gap-3 items-center justify-center bg-white dark:bg-neutral-950">
@@ -109,7 +105,6 @@ const PurchasedHistoryPage = () => {
         </p>
       </div>
 
-      {/* পেমেন্ট নোটিফিকেশন ব্যানার */}
       {verifyStatus && verifyStatus !== "verifying" && (
         <div
           className={`p-4 rounded-xl flex items-start gap-3 border ${
@@ -132,7 +127,6 @@ const PurchasedHistoryPage = () => {
         </div>
       )}
 
-      {/* HeroUI Table Component */}
       <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 shadow-sm overflow-hidden p-2">
         <Table>
           <Table.ScrollContainer className="w-full overflow-x-auto no-scrollbar">
@@ -162,13 +156,12 @@ const PurchasedHistoryPage = () => {
                 emptyContent={"You haven't purchased any artwork yet."}
               >
                 {purchases.map((item) => {
-                  // ডাটাবেজ থেকে ইমেজ প্রপার্টি চেক করা
                   const artworkTitle =
                     item.artworkId?.title || "Deleted Artwork";
                   const artworkImage =
                     item.artworkId?.imageUrl ||
                     item.artworkId?.image_url ||
-                    null; // 👈 কোনো ডেমো বা প্লেসহোল্ডার স্ট্রিং নেই, সরাসরি null
+                    null;
                   const artistName =
                     item.artworkId?.artistName || "Unknown Artist";
 
@@ -180,7 +173,6 @@ const PurchasedHistoryPage = () => {
                       {/* Artwork Info */}
                       <Table.Cell className="font-medium text-neutral-950 dark:text-neutral-100 py-4">
                         <div className="flex items-center gap-3">
-                          {/* 🚀 ইমেজ কন্ডিশনাল রেন্ডারিং: ইমেজ থাকলে দেখাবে, না থাকলে ডেমো ফাইলের বদলে CSS বক্স লোড হবে */}
                           {artworkImage ? (
                             <div className="relative w-10 h-10 shrink-0">
                               <Image

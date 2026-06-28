@@ -9,7 +9,6 @@ const DashboardParentLayout = async ({ children }) => {
 
   return (
     <div className="flex flex-col md:flex-row h-screen w-screen bg-white dark:bg-black text-neutral-900 dark:text-neutral-100 overflow-hidden transition-colors duration-300">
-      {/* 🛠️ ফিক্সড র্যাপার: মোবাইলে এটি কোনো বাধা দেবে না, ডেক্সটপে ফিক্সড ৬৪ উইডথ ধরে রাখবে */}
       <div className="md:w-64 md:shrink-0 md:border-r md:border-neutral-200 md:dark:border-neutral-800 bg-white dark:bg-black">
         <DashboardSideBar session={session} />
       </div>

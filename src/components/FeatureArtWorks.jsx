@@ -7,7 +7,7 @@ import { ArrowRight, Eye } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
-const baseUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:5000";
+const baseUrl = process.env.NEXT_PUBLIC_URL;
 
 export default function FeatureArtWorks() {
   const [artworks, setArtworks] = useState([]);
@@ -135,8 +135,7 @@ export default function FeatureArtWorks() {
                       <p className="text-xs text-gray-500 dark:text-gray-400">
                         By{" "}
                         <span className="text-gray-700 dark:text-gray-300 font-medium">
-                          {art.artist_name || "Unknown Artist"}{" "}
-                          {/* ডাটা অনুযায়ী artist_name দেওয়া হয়েছে */}
+                          {art.artist_name || "Unknown Artist"}
                         </span>
                       </p>
                       {art.price && (

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { authClient } from "@/lib/auth-client";
 import {
   LineChart,
   Line,
@@ -25,38 +26,49 @@ const AnalyticsPage = () => {
   useEffect(() => {
     const fetchAllData = async () => {
       try {
-        // ১. প্রতিটি এপিআই রুট থেকে আলাদাভাবে ডেটা ফেচ করা হচ্ছে
-        const userRes = await fetch("http://localhost:5000/api/arthub/user");
-        if (!userRes.ok) throw new Error(`User API failed: ${userRes.status}`);
+        setLoading(true);
 
-        const artworkRes = await fetch(
-          "http://localhost:5000/api/arthub/artwork",
-        );
+        const { data: tokenData, error: tokenError } = await authClient.token();
+
+        if (tokenError || !tokenData?.token) {
+          throw new Error("Authentication token missing. Please log in again.");
+        }
+
+        const jwtToken = tokenData.token;
+        const baseUrl = process.env.NEXT_PUBLIC_URL;
+
+        const requestHeaders = {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${jwtToken}`,
+        };
+
+        const [userRes, artworkRes, transRes] = await Promise.all([
+          fetch(`${baseUrl}/api/arthub/user`, { headers: requestHeaders }),
+          fetch(`${baseUrl}/api/arthub/artwork`, { headers: requestHeaders }),
+          fetch(`${baseUrl}/api/arthub/transactions`, {
+            headers: requestHeaders,
+          }),
+        ]);
+
+        if (!userRes.ok) throw new Error(`User API failed: ${userRes.status}`);
         if (!artworkRes.ok)
           throw new Error(`Artwork API failed: ${artworkRes.status}`);
-
-        const transRes = await fetch(
-          "http://localhost:5000/api/arthub/transactions",
-        );
         if (!transRes.ok)
           throw new Error(`Transaction API failed: ${transRes.status}`);
 
-        const usersData = await userRes.json();
-        const artworksData = await artworkRes.json();
-        const transData = await transRes.json();
+        const [usersData, artworksData, transData] = await Promise.all([
+          userRes.json(),
+          artworkRes.json(),
+          transRes.json(),
+        ]);
 
-        // ২. এপিআই রেসপন্স অবজেক্ট হলে সেখান থেকে অ্যারে ফরম্যাট নিশ্চিত করা
         const users = Array.isArray(usersData)
           ? usersData
           : usersData.data || usersData.users || [];
-        const artworks = Array.isArray(artworksData)
-          ? artworksData
-          : artworksData.data || artworksData.artworks || [];
         const transactions = Array.isArray(transData)
           ? transData
           : transData.data || transData.transactions || [];
 
-        // ৩. ক্যালকুলেশন লজিক
         const totalUsers = users.length;
         const totalArtists = users.filter(
           (user) => user.role === "artist",
@@ -68,7 +80,6 @@ const AnalyticsPage = () => {
           0,
         );
 
-        // ৪. টপ কার্ড স্ট্যাটাস আপডেট
         setStats([
           { title: "Total Users", value: totalUsers.toLocaleString() },
           { title: "Total Artists", value: totalArtists.toLocaleString() },
@@ -82,14 +93,13 @@ const AnalyticsPage = () => {
           },
         ]);
 
-        // ৫. চার্টের জন্য মাস ভিত্তিক ডেটা ম্যাপ করা
         const monthlyMap = {};
         transactions.forEach((item) => {
           const dateStr = item.createdAt || item.date;
           if (dateStr) {
             const monthName = new Date(dateStr).toLocaleString("en-US", {
               month: "short",
-            }); // যেমন: "Jan"
+            });
             const amount = Number(item.amount || item.price || 0);
             monthlyMap[monthName] = (monthlyMap[monthName] || 0) + amount;
           }
@@ -141,9 +151,7 @@ const AnalyticsPage = () => {
   }, []);
 
   if (loading)
-    return (
-      <div className="text-center p-10 text-neutral-500">লোড হচ্ছে...</div>
-    );
+    return <div className="text-center p-10 text-neutral-500">Loading...</div>;
   if (error)
     return <div className="text-center p-10 text-red-500">Error: {error}</div>;
 

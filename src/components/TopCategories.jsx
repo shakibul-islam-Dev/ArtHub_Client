@@ -17,7 +17,9 @@ const TopCategories = () => {
         setLoading(true);
         setError(null);
 
-        const res = await fetch("http://localhost:5000/api/arthub/artwork");
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_URL}/api/arthub/artwork`,
+        );
         if (!res.ok) {
           throw new Error("Failed to load category data from artworks");
         }

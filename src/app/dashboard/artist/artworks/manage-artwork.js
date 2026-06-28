@@ -32,7 +32,7 @@ const ManageArtWorks = ({ userData }) => {
       if (!artistId) return;
       try {
         setLoading(true);
-        // 🔥 ফিক্স: এখানে সরাসরি কুয়েরি প্যারামিটার হিসেবে artist_id পাঠানো হচ্ছে
+
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_URL}/api/arthub/artwork?artist_id=${artistId}`,
           { cache: "no-store" },
@@ -42,7 +42,6 @@ const ManageArtWorks = ({ userData }) => {
           ? allArtworks
           : allArtworks.data || [];
 
-        // ব্যাকএন্ড থেকেই ফিল্টার হয়ে আসবে, তাই এখানে আর আলাদা ফিল্টারের দরকার নেই
         setArtworks(targetData);
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -156,7 +155,7 @@ const ManageArtWorks = ({ userData }) => {
                   alt={art.title}
                   unoptimized
                 />
-                {/* ভিজুয়াল ইন্ডিকেটর: আর্টওয়ার্ক পেন্ডিং নাকি অ্যাপ্রুভড সেটা দেখার জন্য */}
+
                 <div className="absolute top-2 left-2 z-10">
                   <span
                     className={`px-2 py-0.5 text-[10px] font-bold uppercase rounded shadow-sm ${

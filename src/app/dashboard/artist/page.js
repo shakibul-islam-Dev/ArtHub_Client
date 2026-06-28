@@ -4,22 +4,21 @@ import React, { useEffect, useState } from "react";
 import { Table } from "@heroui/react";
 import { LayoutGrid } from "lucide-react";
 import { useSession } from "@/lib/auth-client";
-import { useRouter } from "next/navigation"; // 👈 ১. useRouter ইম্পোর্ট করুন
+import { useRouter } from "next/navigation";
 
 const ArtistDashboardPage = () => {
   const [artworks, setArtworks] = useState([]);
   const [loading, setLoading] = useState(true);
   const { data: session } = useSession();
-  const router = useRouter(); // 👈 ২. router ইনিশিয়ালাইজ করুন
+  const router = useRouter();
 
   useEffect(() => {
     const DATABASE_API_URL = process.env.NEXT_PUBLIC_URL;
 
     async function fetchData() {
-      // সেশন চেক শেষ হওয়া পর্যন্ত এবং সেশন না থাকলে রিডাইরেক্ট করা
       if (session === null) {
         setLoading(false);
-        router.push("/login"); // 👈 এখন 'router' সঠিকভাবে কাজ করবে
+        router.push("/login");
         return;
       }
 
@@ -49,7 +48,7 @@ const ArtistDashboardPage = () => {
     }
 
     fetchData();
-  }, [session, router]); // 👈 ডিপেন্ডেন্সি অ্যারেতে সেশন ও রাউটার যোগ করা হলো
+  }, [session, router]);
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6 text-foreground transition-colors">

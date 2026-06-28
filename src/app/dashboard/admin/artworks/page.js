@@ -7,12 +7,16 @@ const ArtworksPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Modal States
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
+
   useEffect(() => {
     const fetchArtworks = async () => {
       try {
         setLoading(true);
 
-        const baseUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:5000";
+        const baseUrl = process.env.NEXT_PUBLIC_URL;
 
         const res = await fetch(
           `${baseUrl}/api/arthub/artwork?isAdminPage=true`,
@@ -36,17 +40,15 @@ const ArtworksPage = () => {
     fetchArtworks();
   }, []);
 
-  // ২. অ্যাডমিন অনুমোদন (PATCH Request)
   const handleApprove = async (id) => {
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:5000";
+      const baseUrl = process.env.NEXT_PUBLIC_URL;
       const res = await fetch(`${baseUrl}/api/arthub/artwork/${id}/approve`, {
         method: "PATCH",
       });
 
       if (!res.ok) throw new Error("Approval failed");
 
-      // স্টেট আপডেট করে স্ট্যাটাস সরাসরি "approved" এবং isApproved true করে দেওয়া
       setArtworks((prev) =>
         prev.map((art) =>
           art._id === id
@@ -59,21 +61,27 @@ const ArtworksPage = () => {
     }
   };
 
-  // ৩. আর্টওয়ার্ক ডিলিট (DELETE Request)
-  const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this artwork?"))
-      return;
+  // Trigger Modal Open
+  const triggerDelete = (id) => {
+    setItemToDelete(id);
+    setIsModalOpen(true);
+  };
+
+  // Confirm Delete Action
+  const confirmDeleteAction = async () => {
+    if (!itemToDelete) return;
 
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:5000";
-      const res = await fetch(`${baseUrl}/api/arthub/artwork/${id}`, {
+      const baseUrl = process.env.NEXT_PUBLIC_URL;
+      const res = await fetch(`${baseUrl}/api/arthub/artwork/${itemToDelete}`, {
         method: "DELETE",
       });
 
       if (!res.ok) throw new Error("Delete failed");
 
-      // স্টেট থেকে ডিলিট হওয়া আর্টওয়ার্কটি রিমুভ করা
-      setArtworks((prev) => prev.filter((art) => art._id !== id));
+      setArtworks((prev) => prev.filter((art) => art._id !== itemToDelete));
+      setIsModalOpen(false);
+      setItemToDelete(null);
     } catch (err) {
       alert(`Error deleting artwork: ${err.message}`);
     }
@@ -82,7 +90,7 @@ const ArtworksPage = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-transparent text-neutral-500">
-        <div className="animate-pulse font-medium">লোড হচ্ছে...</div>
+        <div className="animate-pulse font-medium">Loading...</div>
       </div>
     );
   }
@@ -114,7 +122,7 @@ const ArtworksPage = () => {
             {artworks.length === 0 ? (
               <tr>
                 <td colSpan="5" className="p-8 text-center text-neutral-500">
-                  কোনো আর্টওয়ার্ক পাওয়া যায়নি।
+                  No ArtWork Found...
                 </td>
               </tr>
             ) : (
@@ -151,7 +159,7 @@ const ArtworksPage = () => {
                         </button>
                       )}
                       <button
-                        onClick={() => handleDelete(art._id)}
+                        onClick={() => triggerDelete(art._id)} // 👈 কাস্টম মডাল ট্রিগার করবে
                         className="bg-destructive text-destructive-foreground px-3 py-1.5 rounded hover:opacity-90 transition text-sm font-medium cursor-pointer"
                       >
                         Delete
@@ -164,6 +172,43 @@ const ArtworksPage = () => {
           </tbody>
         </table>
       </div>
+
+      {/* Confirmation Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 max-w-sm w-full shadow-xl space-y-4 transition-all transform scale-100">
+            <div className="text-center sm:text-left space-y-2">
+              <h3 className="text-lg font-bold text-neutral-900 dark:text-neutral-50">
+                Confirm Deletion
+              </h3>
+              <p className="text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed">
+                Are you sure you want to delete this artwork? This action cannot
+                be undone.
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsModalOpen(false);
+                  setItemToDelete(null);
+                }}
+                className="w-full sm:w-auto px-4 py-2 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 font-medium text-sm rounded-xl transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteAction}
+                className="w-full sm:w-auto px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium text-sm rounded-xl transition cursor-pointer"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

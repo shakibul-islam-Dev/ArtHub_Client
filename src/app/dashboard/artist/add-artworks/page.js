@@ -15,7 +15,7 @@ const AddArtworksPage = async () => {
 
     user = session?.user || null;
   } catch (error) {
-    console.error("Better-Auth সেশন গেট করতে সমস্যা হয়েছে:", error);
+    console.error("Better-Auth Session Fetch Error:", error);
   }
 
   return (

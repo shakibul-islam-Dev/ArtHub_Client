@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { authClient } from "@/lib/auth-client";
 
 const AdminDashboardHomePage = () => {
-  // নিশ্চিত করুন শুরুতে এটি একটি খালি অ্যারে []
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -11,25 +11,38 @@ const AdminDashboardHomePage = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/arthub/user");
+        setLoading(true);
+
+        const { data: tokenData, error: tokenError } = await authClient.token();
+
+        if (tokenError || !tokenData?.token) {
+          throw new Error("Authentication token missing. Please log in again.");
+        }
+
+        const jwtToken = tokenData.token;
+        const baseUrl = process.env.NEXT_PUBLIC_URL;
+
+        const response = await fetch(`${baseUrl}/api/arthub/user`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${jwtToken}`,
+          },
+        });
+
         if (!response.ok) {
-          throw new Error("ডেটা লোড করতে সমস্যা হয়েছে!");
+          throw new Error("Data Featch Failed");
         }
         const resData = await response.json();
 
-        // ১. যদি ব্যাকএন্ড সরাসরি ইউজারদের অ্যারে পাঠায় [{}, {}, {}]
         if (Array.isArray(resData)) {
           setUsers(resData);
-        }
-        // ২. যদি ব্যাকএন্ড কোনো অবজেক্টের ভেতর অ্যারে পাঠায় (যেমন: { users: [...] } বা { data: [...] })
-        else if (resData && Array.isArray(resData.users)) {
+        } else if (resData && Array.isArray(resData.users)) {
           setUsers(resData.users);
         } else if (resData && Array.isArray(resData.data)) {
           setUsers(resData.data);
-        }
-        // ৩. কোনোটিই না মিললে এরর হ্যান্ডেল করা
-        else {
-          throw new Error("ব্যাকএন্ড থেকে সঠিক অ্যারে ডেটা পাওয়া যায়নি।");
+        } else {
+          throw new Error("Server  returned status: 400");
         }
       } catch (err) {
         setError(err.message);
@@ -43,21 +56,29 @@ const AdminDashboardHomePage = () => {
 
   const handleRoleChange = async (userId, newRole) => {
     try {
-      const response = await fetch(
-        `http://localhost:5000/api/arthub/user/${userId}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ role: newRole }),
+      const { data: tokenData, error: tokenError } = await authClient.token();
+
+      if (tokenError || !tokenData?.token) {
+        throw new Error("Action denied: Token missing.");
+      }
+
+      const jwtToken = tokenData.token;
+      const baseUrl = process.env.NEXT_PUBLIC_URL;
+
+      const response = await fetch(`${baseUrl}/api/arthub/user/${userId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${jwtToken}`,
         },
-      );
+        body: JSON.stringify({ role: newRole }),
+      });
 
       if (!response.ok) {
-        throw new Error("রোল আপডেট করা যায়নি");
+        throw new Error("ROLE UPDATE FAILED");
       }
 
       setUsers((prev) =>
-        // এখানে সেফটি চেক রাখা হয়েছে যেন prev কোনো কারণে অ্যারে না হলেও ক্র্যাশ না করে
         Array.isArray(prev)
           ? prev.map((u) =>
               u.id === userId || u._id === userId ? { ...u, role: newRole } : u,
@@ -70,9 +91,7 @@ const AdminDashboardHomePage = () => {
   };
 
   if (loading)
-    return (
-      <div className="text-center p-10 text-neutral-500">লোড হচ্ছে...</div>
-    );
+    return <div className="text-center p-10 text-neutral-500">Loading...</div>;
   if (error)
     return <div className="text-center p-10 text-red-500">Error: {error}</div>;
 
@@ -106,7 +125,6 @@ const AdminDashboardHomePage = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-200 dark:divide-neutral-800">
-            {/* এখানে একটি সেফগার্ড ট্রিক (users && Array.isArray(users)) ব্যবহার করা হয়েছে */}
             {Array.isArray(users) &&
               users.map((user) => (
                 <tr
@@ -128,7 +146,7 @@ const AdminDashboardHomePage = () => {
                       onChange={(e) =>
                         handleRoleChange(user.id || user._id, e.target.value)
                       }
-                      className="px-3 py-1 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg text-sm"
+                      className="px-3 py-1 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg text-sm transition-colors"
                     >
                       <option value="user">User</option>
                       <option value="artist">Artist</option>

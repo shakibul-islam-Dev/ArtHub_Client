@@ -5,6 +5,49 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Star, Heart, Loader2 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { authClient } from "@/lib/auth-client";
+
+const DUMMY_ARTISTS = [
+  {
+    id: "dummy-1",
+    name: "Zainul Abedin",
+    specialty: "Fine Arts & Sketching",
+    avatar:
+      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
+    coverImage:
+      "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=500",
+    totalArtworks: 12,
+    rating: 4.9,
+    followers: "4.5K",
+    soldCount: 38,
+  },
+  {
+    id: "dummy-2",
+    name: "S.M. Sultan",
+    specialty: "Oil Painting",
+    avatar:
+      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
+    coverImage:
+      "https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=500",
+    totalArtworks: 8,
+    rating: 4.8,
+    followers: "3.2K",
+    soldCount: 29,
+  },
+  {
+    id: "dummy-3",
+    name: "Shahabuddin Ahmed",
+    specialty: "Contemporary Art",
+    avatar:
+      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
+    coverImage:
+      "https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=500",
+    totalArtworks: 15,
+    rating: 4.7,
+    followers: "5.1K",
+    soldCount: 24,
+  },
+];
 
 const TopArtist = () => {
   const [artists, setArtists] = useState([]);
@@ -17,25 +60,37 @@ const TopArtist = () => {
         setLoading(true);
         setError(null);
 
-        // 1. Fetch data from both APIs concurrently
+        const { data: tokenData, error: tokenError } = await authClient.token();
+        if (tokenError || !tokenData?.token) {
+          throw new Error("Authentication token missing. Loading showcase...");
+        }
+
+        const jwtToken = tokenData.token;
+        const baseUrl = process.env.NEXT_PUBLIC_URL;
+
+        const requestHeaders = {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${jwtToken}`,
+        };
+
         const [artworkRes, transactionRes] = await Promise.all([
-          fetch("http://localhost:5000/api/arthub/artwork"),
-          fetch("http://localhost:5000/api/arthub/transactions"),
+          fetch(`${baseUrl}/api/arthub/artwork`, { headers: requestHeaders }),
+          fetch(`${baseUrl}/api/arthub/transactions`, {
+            headers: requestHeaders,
+          }),
         ]);
 
         if (!artworkRes.ok || !transactionRes.ok) {
-          throw new Error("Data Loading Problem");
+          throw new Error("API data unavailable");
         }
 
         const artworks = await artworkRes.json();
         const transactions = await transactionRes.json();
 
-        // 2. Safe parsing of transaction list
         const transactionList = Array.isArray(transactions)
           ? transactions
           : transactions?.data || transactions?.transactions || [];
 
-        // 3. Count completed sales per artist
         const salesCountMap = {};
         if (Array.isArray(transactionList)) {
           transactionList.forEach((tx) => {
@@ -50,7 +105,6 @@ const TopArtist = () => {
           });
         }
 
-        // 4. Group artworks into unique artist objects
         const artworkList = Array.isArray(artworks)
           ? artworks
           : artworks?.data || [];
@@ -81,19 +135,22 @@ const TopArtist = () => {
               soldCount: salesCountMap[artistId] || 0,
             };
           }
-
           artistMap[artistId].totalArtworks += 1;
         });
 
-        // 5. Convert map to array, sort by sales count, and slice top 3
         const sortedArtists = Object.values(artistMap)
           .sort((a, b) => b.soldCount - a.soldCount)
           .slice(0, 3);
 
-        setArtists(sortedArtists);
+        if (sortedArtists.length === 0) {
+          setArtists(DUMMY_ARTISTS);
+        } else {
+          setArtists(sortedArtists);
+        }
       } catch (err) {
-        console.error("API Fetch Error:", err);
-        setError(err.message || "An unexpected error occurred");
+        console.warn("Falling back to dummy data due to:", err.message);
+
+        setArtists(DUMMY_ARTISTS);
       } finally {
         setLoading(false);
       }
@@ -109,14 +166,6 @@ const TopArtist = () => {
         <p className="text-sm text-muted-foreground">
           Artist Profiles Loading...
         </p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="text-center py-20 text-destructive font-medium">
-        <p>{error}</p>
       </div>
     );
   }
@@ -146,79 +195,64 @@ const TopArtist = () => {
 
       {/* Artist Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        {artists.length === 0 ? (
-          <div className="col-span-full text-center py-10 text-muted-foreground">
-            No artists found.
-          </div>
-        ) : (
-          artists.map((artist) => (
-            <div
-              key={artist.id}
-              className="group relative bg-card text-card-foreground border border-border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col w-full"
-            >
-              <div className="h-28 sm:h-32 w-full overflow-hidden bg-muted relative">
+        {artists.map((artist) => (
+          <div
+            key={artist.id}
+            className="group relative bg-card text-card-foreground border border-border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col w-full"
+          >
+            <div className="h-28 sm:h-32 w-full overflow-hidden bg-muted relative">
+              <Image
+                src={artist.coverImage}
+                alt={`${artist.name} cover`}
+                fill
+                sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
+                className="object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-black/10" />
+            </div>
+
+            <div className="p-5 pt-0 flex-1 flex flex-col items-center text-center relative">
+              <div className="w-16 h-16 rounded-full border-4 border-card overflow-hidden -mt-8 bg-muted shadow-sm z-10 relative">
                 <Image
-                  src={artist.coverImage}
-                  alt={`${artist.name} cover`}
+                  src={artist.avatar}
+                  alt={artist.name}
                   fill
-                  sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
-                  className="object-cover group-hover:scale-105 transition-transform duration-500"
+                  sizes="64px"
+                  className="object-cover"
                 />
-                <div className="absolute inset-0 bg-black/10" />
               </div>
 
-              <div className="p-5 pt-0 flex-1 flex flex-col items-center text-center relative">
-                <div className="w-16 h-16 rounded-full border-4 border-card overflow-hidden -mt-8 bg-muted shadow-sm z-10 relative">
-                  <Image
-                    src={artist.avatar}
-                    alt={artist.name}
-                    fill
-                    sizes="64px"
-                    className="object-cover"
+              <div className="mt-3 flex-1 w-full">
+                <h3 className="font-bold text-base sm:text-lg text-foreground hover:text-primary transition-colors line-clamp-1">
+                  {artist.name}
+                </h3>
+                <p className="text-xs text-muted-foreground font-medium mt-0.5 line-clamp-1">
+                  {artist.specialty}
+                </p>
+              </div>
+
+              <div className="flex items-center justify-around gap-2 my-4 w-full border-y border-border/60 py-2.5 text-xs font-semibold text-muted-foreground">
+                <div className="flex items-center gap-1">
+                  <Star size={14} className="text-amber-500 fill-amber-500" />
+                  <span className="text-foreground">{artist.rating}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Heart
+                    size={14}
+                    className="text-destructive fill-destructive/10"
                   />
+                  <span className="text-foreground">{artist.followers}</span>
                 </div>
-
-                <div className="mt-3 flex-1 w-full">
-                  <h3 className="font-bold text-base sm:text-lg text-foreground hover:text-primary transition-colors line-clamp-1">
-                    {artist.name}
-                  </h3>
-                  <p className="text-xs text-muted-foreground font-medium mt-0.5 line-clamp-1">
-                    {artist.specialty}
-                  </p>
+                <div>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+                    {artist.soldCount}
+                  </span>{" "}
+                  Sold ({artist.totalArtworks} Arts)
                 </div>
-
-                <div className="flex items-center justify-around gap-2 my-4 w-full border-y border-border/60 py-2.5 text-xs font-semibold text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <Star size={14} className="text-amber-500 fill-amber-500" />
-                    <span className="text-foreground">{artist.rating}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Heart
-                      size={14}
-                      className="text-destructive fill-destructive/10"
-                    />
-                    <span className="text-foreground">{artist.followers}</span>
-                  </div>
-                  <div>
-                    <span className="text-emerald-600 dark:text-emerald-400 font-bold">
-                      {artist.soldCount}
-                    </span>{" "}
-                    Sold ({artist.totalArtworks} Arts)
-                  </div>
-                </div>
-
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="w-full text-xs font-medium h-9"
-                  asChild
-                >
-                  <Link href={`/artists/${artist.id}`}>View Profile</Link>
-                </Button>
               </div>
             </div>
-          ))
-        )}
+          </div>
+        ))}
       </div>
     </div>
   );
