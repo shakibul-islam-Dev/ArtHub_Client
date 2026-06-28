@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import ManageArtWorks from "./manage-artwork";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
