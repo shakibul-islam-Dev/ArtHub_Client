@@ -11,7 +11,6 @@ import {
   Home,
   Image as ImageIcon,
   History,
-  CreditCard,
   User,
   PlusCircle,
   FolderEdit,
@@ -54,7 +53,6 @@ export default function DashboardSideBar({ session: initialSession }) {
           const data = await userRes.json();
           const userData = data?.success ? data.data : data;
 
-          // 🚀 ডাটাবেজের ফিল্ড প্রপার্টি চেক ও সেভ
           const fetchedImage =
             userData?.image_url || userData?.imageUrl || userData?.image;
           setDbUserImage(fetchedImage);
@@ -63,20 +61,33 @@ export default function DashboardSideBar({ session: initialSession }) {
           if (fetchedName) setDbUserName(fetchedName);
         }
 
-        // 🚀 ফিক্স: ইউজার যদি আর্টিস্ট বা এডমিন হয়, তবে সাবস্ক্রিপশন চেক করার দরকার নেই
+        // আর্টিস্ট বা এডমিন হলে সাবস্ক্রিপশন চেক করার দরকার নেই
         if (role === "artist" || role === "admin") {
-          setDbUserPlan(role); // প্ল্যানের জায়গায় রোলটাই শো করবে
+          setDbUserPlan(role);
           return;
         }
 
-        // ২. সাবস্ক্রিপশন এপিআই থেকে প্ল্যান আনা (শুধুমাত্র সাধারণ ইউজারদের জন্য)
+        // ২. সাবস্ক্রিপশন ডেটা আনা
         const subRes = await fetch(
-          `${baseUrl}/api/arthub/subscriptions/subscriptions/${currentSession.user.email}`,
+          `${baseUrl}/api/arthub/subscriptions/${currentSession.user.email}`,
         );
         if (subRes.ok) {
           const subData = await subRes.json();
-          if (subData?.success && subData?.data?.status === "complete") {
-            setDbUserPlan(subData.data.planName || "Free");
+
+          // বিভিন্ন সম্ভাব্য স্ট্যাটাস হ্যান্ডেল করার জন্য (complete, active, succeeded)
+          const status = subData?.data?.status?.toLowerCase();
+          const isSubscribed =
+            status === "complete" ||
+            status === "active" ||
+            status === "succeeded";
+
+          if (subData?.success && isSubscribed) {
+            // planName, plan_name বা plan যেকোনো ফরমেটে ডেটা আসলে তা রিসিভ করবে
+            const planName =
+              subData.data.planName ||
+              subData.data.plan_name ||
+              subData.data.plan;
+            setDbUserPlan(planName || "Free");
           } else {
             setDbUserPlan("Free");
           }
@@ -89,7 +100,8 @@ export default function DashboardSideBar({ session: initialSession }) {
     };
 
     fetchLatestUserData();
-  }, [currentSession?.user?.id, currentSession?.user?.email, pathname, role]); // ডিপেন্ডেন্সিতে role অ্যাড করা হলো
+    // 💡 pathname বাদ দেওয়া হয়েছে যাতে পেজ চেঞ্জ হলে ফালতু রিকোয়েস্ট না যায়
+  }, [currentSession?.user?.id, currentSession?.user?.email, role]);
 
   useEffect(() => {
     setIsOpen(false);
@@ -97,7 +109,6 @@ export default function DashboardSideBar({ session: initialSession }) {
 
   const userName = dbUserName || currentSession?.user?.name || "User";
 
-  // 🚀 লাইভ ইমেজ সোর্স রেজোলিউশন
   const userImage =
     dbUserImage ||
     currentSession?.user?.image_url ||
@@ -325,6 +336,7 @@ export default function DashboardSideBar({ session: initialSession }) {
           <div className="flex justify-between items-center pb-4 border-b border-border/50">
             <Link
               href="/"
+              onClick={() => setIsOpen(false)}
               className="flex items-center gap-3 min-w-0 hover:opacity-85 transition-opacity cursor-pointer"
             >
               {userImage ? (
@@ -373,6 +385,7 @@ export default function DashboardSideBar({ session: initialSession }) {
                 <Link
                   key={`mobile-${item.href}-${index}`}
                   href={item.href}
+                  onClick={() => setIsOpen(false)}
                   className={`p-3 rounded-lg text-sm font-medium transition-colors flex items-center gap-3 ${
                     isActive
                       ? "bg-accent text-accent-foreground font-semibold"

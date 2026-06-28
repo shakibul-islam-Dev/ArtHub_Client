@@ -13,13 +13,11 @@ export default async function SettingsPage() {
 
   const loggedInUser = session?.user;
 
-  // ❌ ভুল ১ ও ২ ফিক্সড: রিটার্নের আগে রিডাইরেক্ট করতে হবে অথবা শুধু রিডাইরেক্ট রাখলেই চলে
   if (!loggedInUser) {
     redirect("/login");
   }
 
   try {
-    // ❌ ভুল ৩ ফিক্সড: আপনার এক্সপ্রেস রাউটার (/:id) অনুযায়ী কোয়েরি প্যারাম বাদ দিয়ে ডাইরেক্ট স্ল্যাশ দিয়ে আইডি পাস করা হলো
     const res = await fetch(`${apiUrl}/api/arthub/user/${loggedInUser.id}`, {
       cache: "no-store",
     });

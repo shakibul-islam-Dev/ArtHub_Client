@@ -151,11 +151,7 @@ export default function ArtworkDetail() {
       </div>
     );
 
-  const artImage =
-    artwork.imageUrl ||
-    artwork.image_url ||
-    artwork.image ||
-    "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=500";
+  const artImage = artwork.imageUrl || artwork.image_url || artwork.image;
   const artistName =
     artwork.artist?.name ||
     artwork.artist ||

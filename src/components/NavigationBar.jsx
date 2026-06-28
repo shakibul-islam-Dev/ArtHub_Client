@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
@@ -24,70 +24,92 @@ const NavigationBar = () => {
   // ডাটাবেজ থেকে রিয়েল-টাইম ডেটা সিঙ্ক করার জন্য স্টেট
   const [dbUserName, setDbUserName] = useState(null);
   const [dbUserImage, setDbUserImage] = useState(null);
-  const [dbUserPlan, setDbUserPlan] = useState("Free"); // ডিফল্ট 'Free' রাখা হলো
+  const [dbUserPlan, setDbUserPlan] = useState("Free");
 
   const pathname = usePathname();
   const router = useRouter();
 
   const { data: session, isPending } = useSession();
-  const role = session?.user?.role?.toLowerCase(); // নিরাপদভাবে রোল রিড করার জন্য
+  const role = session?.user?.role?.toLowerCase();
 
-  // ডাটাবেজ থেকে লেটেস্ট তথ্য (নাম, ইমেজ, সাবস্ক্রিপশন প্ল্যান) ফেচ করার ইফেক্ট
-  useEffect(() => {
-    const fetchLatestUserData = async () => {
-      if (!session?.user?.id || !session?.user?.email) return;
+  // 🚀 ফিক্স: ফাংশনটিকে useCallback দিয়ে বাইরে নিয়ে আসা হয়েছে যাতে ইভেন্ট লিসেনারও এটি কল করতে পারে
+  const fetchLatestUserData = useCallback(async () => {
+    if (!session?.user?.id || !session?.user?.email) return;
 
-      const baseUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:5000";
+    const baseUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:5000";
 
-      try {
-        // ১. ইউজারের বেসিক প্রোফাইল ডেটা আনা (নাম, ছবি) - এটি সবার জন্যই চলবে
-        const userRes = await fetch(
-          `${baseUrl}/api/arthub/user/${session.user.id}`,
-        );
-        if (userRes.ok) {
-          const data = await userRes.json();
-          const userData = data?.success ? data.data : data;
+    try {
+      // ১. ইউজারের প্রোফাইল ডেটা আনা
+      const userRes = await fetch(
+        `${baseUrl}/api/arthub/user/${session.user.id}`,
+      );
+      if (userRes.ok) {
+        const data = await userRes.json();
+        const userData = data?.success ? data.data : data;
 
-          const fetchedImage = userData?.image_url || userData?.image;
-          if (fetchedImage) setDbUserImage(fetchedImage);
+        const fetchedImage = userData?.image_url || userData?.image;
+        if (fetchedImage) setDbUserImage(fetchedImage);
 
-          const fetchedName = userData?.name || userData?.username;
-          if (fetchedName) setDbUserName(fetchedName);
-        }
-
-        // 🚀 ফিক্স: ইউজার আর্টিস্ট বা এডমিন হলে সাবস্ক্রিপশন চেক করার দরকার নেই
-        if (role === "artist" || role === "admin") {
-          setDbUserPlan(role); // প্ল্যানের জায়গায় আর্টিস্ট/এডমিন টেক্সটই সেট করে দেওয়া হলো
-          return;
-        }
-
-        // ২. নতুন ডেডিকেটেড সাবস্ক্রিপশন এপিআই থেকে লাইভ প্ল্যান আনা (শুধুমাত্র জেনারেল ইউজারদের জন্য)
-        const subRes = await fetch(
-          `${baseUrl}/api/arthub/subscriptions/subscriptions/${session.user.email}`,
-        );
-        if (subRes.ok) {
-          const subData = await subRes.json();
-          // যদি সাবস্ক্রিপশন স্ট্যাটাস 'complete' থাকে তবে ডাটাবেজের planName সেট হবে
-          if (subData?.success && subData?.data?.status === "complete") {
-            setDbUserPlan(subData.data.planName || "Free");
-          } else {
-            setDbUserPlan("Free");
-          }
-        } else {
-          setDbUserPlan("Free"); // এপিআই ৪MD বা কোনো এরর দিলে ফ্রী প্ল্যান দেখাবে
-        }
-      } catch (error) {
-        console.error(
-          "Error fetching latest user or subscription data on navbar:",
-          error,
-        );
+        const fetchedName = userData?.name || userData?.username;
+        if (fetchedName) setDbUserName(fetchedName);
       }
+
+      // ইউজার আর্টিস্ট বা এডমিন হলে সাবস্ক্রিপশন চেক করার দরকার নেই
+      if (role === "artist" || role === "admin") {
+        setDbUserPlan(role);
+        return;
+      }
+
+      // ২. সাবস্ক্রিপশন এপিআই থেকে লাইভ প্ল্যান আনা (সঠিক পাথ ফিক্স করা হয়েছে)
+      const subRes = await fetch(
+        `${baseUrl}/api/arthub/subscriptions/${session.user.email}`,
+      );
+      if (subRes.ok) {
+        const subData = await subRes.json();
+        const subscription = subData?.data || subData;
+
+        // স্ট্যাটাস complete বা active হলে প্ল্যান সেট হবে
+        const isSubscribed =
+          subscription?.status === "complete" ||
+          subscription?.status === "active";
+        const currentPlan =
+          subscription?.planName || subscription?.plan || "Free";
+
+        if (isSubscribed) {
+          setDbUserPlan(currentPlan);
+        } else {
+          setDbUserPlan("Free");
+        }
+      } else {
+        setDbUserPlan("Free");
+      }
+    } catch (error) {
+      console.error(
+        "Error fetching latest user or subscription data on navbar:",
+        error,
+      );
+      setDbUserPlan("Free");
+    }
+  }, [session?.user?.id, session?.user?.email, role]);
+
+  // ইনিশিয়াল ডেটা ফেচিং ইফেক্ট
+  useEffect(() => {
+    fetchLatestUserData();
+  }, [fetchLatestUserData, pathname]);
+
+  // 🚀 রিয়েল-টাইম প্ল্যান চেঞ্জ ট্র্যাক করার জন্য কাস্টম ইভেন্ট লিসেনার
+  useEffect(() => {
+    const handlePlanUpdate = () => {
+      fetchLatestUserData(); // প্ল্যান চেঞ্জ হওয়ার ইভেন্ট পেলেই আবার ডেটা টানবে
     };
 
-    fetchLatestUserData();
-  }, [session?.user?.id, session?.user?.email, pathname, role]); // ডিপেন্ডেন্সিতে role অ্যাড করা হলো
+    window.addEventListener("planUpdated", handlePlanUpdate);
+    return () => {
+      window.removeEventListener("planUpdated", handlePlanUpdate);
+    };
+  }, [fetchLatestUserData]);
 
-  // সেশন ইমেজ চেঞ্চ হলে এরর রিসেট করা
+  // সেশন ইমেজ চেঞ্জ হলে এরর রিসেট করা
   const rawImageUrl =
     dbUserImage ||
     session?.user?.image ||
@@ -122,7 +144,7 @@ const NavigationBar = () => {
   // ফাইনাল ডাটা রেজোলিউশন
   const userName = dbUserName || session?.user?.name || "User";
   const userEmail = session?.user?.email;
-  const userPlan = dbUserPlan; // নতুন আপগ্রেডেড লাইভ প্ল্যান (free, pro, premium, artist)
+  const userPlan = dbUserPlan;
   const userInitial = userName?.trim().charAt(0).toUpperCase() || "U";
 
   return (
@@ -182,7 +204,6 @@ const NavigationBar = () => {
               <Dropdown>
                 <Dropdown.Trigger className="rounded-full cursor-pointer focus:outline-none">
                   <div>
-                    {/* 🛠️ ফিক্সড ডেক্সটপ এভাটার: ভেতরে HTML img ট্যাগ যোগ করা হয়েছে */}
                     <Avatar
                       fallback={
                         <span className="font-semibold text-sm">
@@ -206,7 +227,6 @@ const NavigationBar = () => {
                 <Dropdown.Popover className="bg-popover text-popover-foreground border border-border">
                   <div className="px-3 pt-3 pb-2 border-b border-border/50">
                     <div className="flex items-center gap-3">
-                      {/* 🛠️ ফিক্সড ড্রপডাউন প্রোফাইল এভাটার */}
                       <Avatar
                         size="sm"
                         fallback={
@@ -355,7 +375,6 @@ const NavigationBar = () => {
           ) : session ? (
             <div className="space-y-3 px-3">
               <div className="flex items-center gap-3 py-2">
-                {/* 🛠️ ফিক্সড মোবাইল এভাটার */}
                 <Avatar
                   className="w-10 h-10 bg-primary text-primary-foreground border border-border overflow-hidden"
                   fallback={
@@ -440,7 +459,6 @@ const NavigationBar = () => {
 
 export default NavigationBar;
 
-/* ================= থিম টগল বাটন ================= */
 export function ModeToggle() {
   const { theme, setTheme } = useTheme();
 

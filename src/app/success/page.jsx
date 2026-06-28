@@ -30,12 +30,10 @@ export default async function Success({ searchParams }) {
         (key) => PLAN_PRCE_ID[key] === metadata?.priceId,
       ) || "free";
 
-    // মেটাডাটা থেকে রোল নেওয়া হচ্ছে, না থাকলে প্ল্যান নেমটাই রোল হিসেবে কাজ করবে
     const role = metadata?.role || planName || "user";
 
     try {
-      const backendUrl =
-        "http://localhost:5000/api/arthub/subscriptions/subscriptions";
+      const backendUrl = `${process.env.NEXT_PUBLIC_URL}/api/arthub/subscriptions`;
 
       await fetch(backendUrl, {
         method: "POST",
