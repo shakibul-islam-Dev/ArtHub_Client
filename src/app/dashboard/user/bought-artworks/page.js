@@ -79,7 +79,7 @@ const BoughtArtworksPage = () => {
             No artworks purchased yet.
           </p>
           <Link
-            href="/artworks"
+            href="/browse-artworks"
             className="mt-4 inline-flex text-xs font-semibold bg-primary text-primary-foreground px-4 py-2 rounded-xl"
           >
             Explore Masterpieces

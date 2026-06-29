@@ -78,8 +78,6 @@ const ArtistDashboardPage = () => {
               <Table.Header className="[&_th]:bg-muted/50 [&_th]:text-muted-foreground [&_th]:border-b [&_th]:border-border">
                 <Table.Column isRowHeader>Title</Table.Column>
                 <Table.Column>Price</Table.Column>
-                <Table.Column>Edit</Table.Column>
-                <Table.Column>Delete</Table.Column>
               </Table.Header>
               <Table.Body>
                 {loading ? (
