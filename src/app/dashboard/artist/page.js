@@ -75,23 +75,19 @@ const ArtistDashboardPage = () => {
               aria-label="Published artworks"
               className="min-w-[600px] md:min-w-full"
             >
-              {/* ৪টি কলাম সেট করা হয়েছে */}
+              {/* হেডারে এখন শুধু ২টি কলাম আছে */}
               <Table.Header className="[&_th]:bg-muted/50 [&_th]:text-muted-foreground [&_th]:border-b [&_th]:border-border">
                 <Table.Column isRowHeader>Title</Table.Column>
                 <Table.Column>Price</Table.Column>
-                <Table.Column>Edit Action</Table.Column>
-                <Table.Column>Delete Action</Table.Column>
               </Table.Header>
 
               <Table.Body>
                 {loading ? (
-                  /* লোডিং অবস্থায় কলাম ম্যাচ করানোর জন্য ৪টি সেল ব্যালেন্স করা হয়েছে */
+                  /* লোডিং অবস্থায় ২টির বেশি সেল দেওয়া যাবে না */
                   <Table.Row>
                     <Table.Cell className="text-center py-4 font-medium text-muted-foreground">
                       Loading...
                     </Table.Cell>
-                    <Table.Cell></Table.Cell>
-                    <Table.Cell></Table.Cell>
                     <Table.Cell></Table.Cell>
                   </Table.Row>
                 ) : artworks.length > 0 ? (
@@ -100,28 +96,21 @@ const ArtistDashboardPage = () => {
                       key={art.id || art._id}
                       className="hover:bg-muted/40 transition-colors border-b border-border/60 last:border-0"
                     >
+                      {/* ডেটার জন্যেও শুধুমাত্র ২টি সেল রাখা হয়েছে */}
                       <Table.Cell className="font-medium text-foreground">
                         {art.title}
                       </Table.Cell>
                       <Table.Cell className="font-semibold text-foreground/90">
                         ${art.price}
                       </Table.Cell>
-                      <Table.Cell className="text-blue-600 dark:text-blue-400 hover:opacity-80 cursor-pointer font-medium transition-opacity">
-                        Edit
-                      </Table.Cell>
-                      <Table.Cell className="text-destructive hover:opacity-80 cursor-pointer font-medium transition-opacity">
-                        Delete
-                      </Table.Cell>
                     </Table.Row>
                   ))
                 ) : (
-                  /* ডেটা না থাকলেও কলাম কাউন্ট ৪টি বজায় রাখা হয়েছে */
+                  /* ডেটা না থাকলেও কলাম কাউন্ট ২ বা ব্যালেন্সড রাখা হয়েছে */
                   <Table.Row>
                     <Table.Cell className="text-center py-4 font-medium text-muted-foreground">
                       No artworks found for this user.
                     </Table.Cell>
-                    <Table.Cell></Table.Cell>
-                    <Table.Cell></Table.Cell>
                     <Table.Cell></Table.Cell>
                   </Table.Row>
                 )}
