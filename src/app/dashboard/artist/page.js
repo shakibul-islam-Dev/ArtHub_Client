@@ -75,16 +75,24 @@ const ArtistDashboardPage = () => {
               aria-label="Published artworks"
               className="min-w-[600px] md:min-w-full"
             >
+              {/* ৪টি কলাম সেট করা হয়েছে */}
               <Table.Header className="[&_th]:bg-muted/50 [&_th]:text-muted-foreground [&_th]:border-b [&_th]:border-border">
                 <Table.Column isRowHeader>Title</Table.Column>
                 <Table.Column>Price</Table.Column>
+                <Table.Column>Edit Action</Table.Column>
+                <Table.Column>Delete Action</Table.Column>
               </Table.Header>
+
               <Table.Body>
                 {loading ? (
+                  /* লোডিং অবস্থায় কলাম ম্যাচ করানোর জন্য ৪টি সেল ব্যালেন্স করা হয়েছে */
                   <Table.Row>
-                    <Table.Cell colSpan={4} className="text-center py-4">
+                    <Table.Cell className="text-center py-4 font-medium text-muted-foreground">
                       Loading...
                     </Table.Cell>
+                    <Table.Cell></Table.Cell>
+                    <Table.Cell></Table.Cell>
+                    <Table.Cell></Table.Cell>
                   </Table.Row>
                 ) : artworks.length > 0 ? (
                   artworks.map((art) => (
@@ -107,10 +115,14 @@ const ArtistDashboardPage = () => {
                     </Table.Row>
                   ))
                 ) : (
+                  /* ডেটা না থাকলেও কলাম কাউন্ট ৪টি বজায় রাখা হয়েছে */
                   <Table.Row>
-                    <Table.Cell colSpan={4} className="text-center py-4">
+                    <Table.Cell className="text-center py-4 font-medium text-muted-foreground">
                       No artworks found for this user.
                     </Table.Cell>
+                    <Table.Cell></Table.Cell>
+                    <Table.Cell></Table.Cell>
+                    <Table.Cell></Table.Cell>
                   </Table.Row>
                 )}
               </Table.Body>

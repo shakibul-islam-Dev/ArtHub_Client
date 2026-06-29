@@ -30,11 +30,7 @@ export default function ArtworkDetail() {
   const [error, setError] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
-  useEffect(() => {
-    if (session) {
-      console.log("=== Active Session Found ===");
-    }
-  }, [session]);
+  useEffect(() => {}, [session]);
 
   useEffect(() => {
     const fetchArtworkData = async () => {
